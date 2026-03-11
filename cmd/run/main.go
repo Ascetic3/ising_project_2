@@ -48,12 +48,10 @@ func main() {
 			log.Fatalf("expected 13 fields in input.csv, got %d: %v", len(record), record)
 		}
 
-		// Возможная заголовочная строка: L;J1;J2;...;save — пропускаем её.
 		if rowIndex == 0 && strings.EqualFold(strings.TrimSpace(record[0]), "L") {
 			continue
 		}
 
-		// Параметры: L;J1;J2;J3;J4;J5;J6;copies;h;T;aSteps;mSteps;save
 		L, err := strconv.Atoi(record[0])
 		if err != nil {
 			log.Fatalf("invalid L value %q: %v", record[0], err)
@@ -64,7 +62,6 @@ func main() {
 			log.Fatalf("invalid J1 value %q: %v", record[1], err)
 		}
 
-		// J2–J6 пока не используются в модели, но читаются
 		_, err = strconv.ParseFloat(record[2], 64)
 		if err != nil {
 			log.Fatalf("invalid J2 value %q: %v", record[2], err)
@@ -132,9 +129,9 @@ func main() {
 			log.Fatalf("simulation failed for L=%d, J=%.3f, h=%.3f: %v", L, J1, h, err)
 		}
 
-		inputParams := strings.Join(record, ";")
+		//inputParams := strings.Join(record, ";")
 		outRecord := []string{
-			inputParams,
+			//inputParams,
 			fmt.Sprintf("%f", last.E),
 			fmt.Sprintf("%f", last.E2),
 			fmt.Sprintf("%f", last.Mtot),

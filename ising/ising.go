@@ -20,11 +20,6 @@ type Params struct {
 type ResultRow struct {
 	T float64
 
-	U float64
-	M float64
-	C float64
-	X float64
-
 	E    float64
 	E2   float64
 	Mtot float64
@@ -42,7 +37,6 @@ func pbc(x, L int) int {
 	}
 	return x % L
 }
-
 
 func calcParameters(lattice array2d, L int, J, h float64, energy, moment, afm *float64) {
 	*energy = 0
@@ -70,10 +64,10 @@ func calcParameters(lattice array2d, L int, J, h float64, energy, moment, afm *f
 func mcStep(lattice array2d, L int, J, h, T float64, x, y int) {
 	S0 := lattice[x][y]
 	S1 := -S0
-	Sr := lattice[pbc(x+1, L)][y] // правый
-	Sb := lattice[x][pbc(y+1, L)] // нижний
-	Sl := lattice[pbc(x-1, L)][y] // левый
-	St := lattice[x][pbc(y-1, L)] // верхний
+	Sr := lattice[pbc(x+1, L)][y]
+	Sb := lattice[x][pbc(y+1, L)]
+	Sl := lattice[pbc(x-1, L)][y]
+	St := lattice[x][pbc(y-1, L)]
 	dE := float64(S1-S0) * (-h - J*float64(Sl+Sr+St+Sb))
 	if rand.Float64() < math.Exp(-dE/T) {
 		lattice[x][y] = S1
@@ -143,7 +137,7 @@ func (s *Simulator) Run(J, h, T float64, aSteps, mSteps int) (ResultRow, error) 
 	L := s.L
 	copies := s.Copies
 
-	N := L * L
+	//N := L * L
 
 	E := 0.0
 	E2 := 0.0
@@ -155,7 +149,6 @@ func (s *Simulator) Run(J, h, T float64, aSteps, mSteps int) (ResultRow, error) 
 	for copyIdx := 0; copyIdx < copies; copyIdx++ {
 		lattice := s.lattices[copyIdx]
 
-		// Термализация.
 		for sIdx := 0; sIdx < aSteps; sIdx++ {
 			nextStep(lattice, L, J, h, T)
 		}
@@ -179,19 +172,8 @@ func (s *Simulator) Run(J, h, T float64, aSteps, mSteps int) (ResultRow, error) 
 		}
 	}
 
-	U := E / float64(N)
-	C := (E2 - E*E) / (T * T * float64(N))
-	m := M / float64(N)
-	X := (M2 - M*M) / (T * float64(N))
-
 	return ResultRow{
-		T: T,
-
-		U: U,
-		M: m,
-		C: C,
-		X: X,
-
+		T:    T,
 		E:    E,
 		E2:   E2,
 		Mtot: M,
