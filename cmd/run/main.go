@@ -62,7 +62,7 @@ func main() {
 			log.Fatalf("invalid J1 value %q: %v", record[1], err)
 		}
 
-		_, err = strconv.ParseFloat(record[2], 64)
+		J2, err := strconv.ParseFloat(record[2], 64)
 		if err != nil {
 			log.Fatalf("invalid J2 value %q: %v", record[2], err)
 		}
@@ -124,9 +124,9 @@ func main() {
 			currentCopies = copies
 		}
 
-		last, err := sim.Run(J1, h, T, aSteps, mSteps)
+		last, err := sim.Run(J1, J2, h, T, aSteps, mSteps)
 		if err != nil {
-			log.Fatalf("simulation failed for L=%d, J=%.3f, h=%.3f: %v", L, J1, h, err)
+			log.Fatalf("simulation failed for L=%d, J1=%.3f, J2=%.3f, h=%.3f: %v", L, J1, J2, h, err)
 		}
 
 		//inputParams := strings.Join(record, ";")
