@@ -25,7 +25,7 @@ func main() {
 	reader := csv.NewReader(inputFile)
 	reader.Comma = ';'
 
-	outputFile, err := os.Create("results.csv")
+	outputFile, err := os.Create("output.csv")
 	if err != nil {
 		log.Fatalf("cannot create results.csv: %v", err)
 	}
@@ -129,16 +129,24 @@ func main() {
 			log.Fatalf("simulation failed for L=%d, J1=%.3f, J2=%.3f, h=%.3f: %v", L, J1, J2, h, err)
 		}
 
-		//inputParams := strings.Join(record, ";")
-		outRecord := []string{
-			//inputParams,
+		// inputParams := strings.Join(record, ";")
+		// outRecord := []string{
+		// 	inputParams,
+		// 	fmt.Sprintf("%f", last.E),
+		// 	fmt.Sprintf("%f", last.E2),
+		// 	fmt.Sprintf("%f", last.Mtot),
+		// 	fmt.Sprintf("%f", last.M2),
+		// 	fmt.Sprintf("%f", last.Afm),
+		// 	fmt.Sprintf("%f", last.Afm2),
+		// }
+		outRecord := append(record,
 			fmt.Sprintf("%f", last.E),
 			fmt.Sprintf("%f", last.E2),
 			fmt.Sprintf("%f", last.Mtot),
 			fmt.Sprintf("%f", last.M2),
 			fmt.Sprintf("%f", last.Afm),
 			fmt.Sprintf("%f", last.Afm2),
-		}
+		)
 
 		if err := writer.Write(outRecord); err != nil {
 			log.Fatalf("cannot write to results.csv: %v", err)
