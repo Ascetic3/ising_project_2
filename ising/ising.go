@@ -181,7 +181,7 @@ func (s *Simulator) Run(J1, J2, h, T float64, aSteps, mSteps int) (ResultRow, er
 			Afm2 += afm * afm / float64(mSteps) / float64(copies)
 		}
 	}
-
+	fmt.Printf("L=%d, J1=%.3f, J2=%.3f, h=%.3f: E=%.3f, M=%.3f, Afm=%.3f \n", L, J1, J2, h, E, M, Afm)
 	return ResultRow{
 		T:    T,
 		E:    E,

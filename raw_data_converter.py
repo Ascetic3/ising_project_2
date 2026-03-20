@@ -4,15 +4,15 @@ import sys
 import os
 class Point:
     def C(self):
-        C = abs(self.e_sq - (self.e*self.e))/((self.t*self.t) * (self.L*self.L))
+        C = abs(self.e_sq - (self.e*self.e))/((self.t*self.t)) /(self.L*self.L)
         return C
     
     def kappa(self):
-        kappa = abs(self.m_sq - (self.m*self.m))/(self.t * (self.L*self.L))
+        kappa = abs(self.m_sq - (self.m*self.m))/(self.t)/(self.L*self.L)
         return kappa
 
     def af_kappa(self):
-        af_kappa = abs(self.afm_sq - (self.afm*self.afm))/(self.t * (self.L*self.L))
+        af_kappa = abs(self.afm_sq - (self.afm*self.afm))/(self.t)/(self.L*self.L)
         return af_kappa
 
     def __init__(self, params:list):
@@ -26,9 +26,6 @@ class Point:
         self.afm_sq = float(params[7])
 
 
-
-
-#заменить точки с 12-18 на 13-19 при наличии save, иначе обратно
 def read_file(file_name:str):
     points = []
     with open(file_name, "r") as f:
@@ -40,7 +37,7 @@ def read_file(file_name:str):
 def export_to_file(file_name:str, points):
     with open(file_name, "w") as f:
         for point in points:
-            f.write(f"{point.t};{point.C()};{point.kappa()};{point.af_kappa()}\n")
+            f.write(f"{point.t};{point.e/(point.L*point.L)};{point.m/(point.L*point.L)};{point.afm/(point.L*point.L)};{point.C()};{point.kappa()};{point.af_kappa()}\n")
     return
 
 
