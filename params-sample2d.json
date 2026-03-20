@@ -17,8 +17,8 @@
 			"step" : 0.01
 		}],
         "save": 1,
-		"aSteps" : 40000,
-        "mSteps" : 50000
+		"aSteps" : 10,
+        "mSteps" : 10
 	}
 	]
 }

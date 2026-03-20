@@ -7,7 +7,7 @@ set INPUT=input.csv
 set OUTPUT=output.csv
 set RESULT=result.csv
 
-echo [1/3] Generating input.csv...
+echo [1/4] Generating input.csv...
 if not exist "%PARAMS%" (
     echo Error: %PARAMS% not found.
     pause
@@ -25,7 +25,7 @@ if not exist "%INPUT%" (
     exit /b 1
 )
 
-echo [2/3] Running Go simulation...
+echo [2/4] Running Go simulation...
 go run ./cmd/run/main.go
 if errorlevel 1 (
     echo Error: Go simulation failed.
@@ -39,7 +39,7 @@ if not exist "%OUTPUT%" (
     exit /b 1
 )
 
-echo [3/3] Converting raw data...
+echo [3/4] Converting raw data...
 py raw_data_converter.py "%OUTPUT%" "%RESULT%"
 if errorlevel 1 (
     echo Error: raw_data_converter.py failed.
@@ -52,6 +52,16 @@ if not exist "%RESULT%" (
     pause
     exit /b 1
 )
+
+echo [4/4] graphs...
+py graph_tool.py "%RESULT%"
+if errorlevel 1 (
+    echo Error: graph_tool.py failed.
+    pause
+    exit /b 1
+)
+
+
 
 echo Done.
 echo Created files:
