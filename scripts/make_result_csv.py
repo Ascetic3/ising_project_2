@@ -1,21 +1,19 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 import sys
-import os
+
+
 class Point:
     def C(self):
-        C = abs(self.e_sq - (self.e*self.e))/((self.t*self.t)) /(self.L*self.L)
-        return C
-    
+        return abs(self.e_sq - (self.e * self.e)) / ((self.t * self.t)) / (self.L * self.L)
+
     def kappa(self):
-        kappa = abs(self.m_sq - (self.m*self.m))/(self.t)/(self.L*self.L)
-        return kappa
+        return abs(self.m_sq - (self.m * self.m)) / (self.t) / (self.L * self.L)
 
     def af_kappa(self):
-        af_kappa = abs(self.afm_sq - (self.afm*self.afm))/(self.t)/(self.L*self.L)
-        return af_kappa
+        return abs(self.afm_sq - (self.afm * self.afm)) / (self.t) / (self.L * self.L)
 
-    def __init__(self, params:list):
+    def __init__(self, params: list):
         self.L = float(params[0])
         self.t = float(params[1])
         self.e = float(params[2])
@@ -26,19 +24,22 @@ class Point:
         self.afm_sq = float(params[7])
 
 
-def read_file(file_name:str):
+def read_file(file_name: str):
     points = []
-    with open(file_name, "r") as f:
+    with open(file_name, "r", encoding="utf-8") as f:
         for line in f:
             point = line.rstrip().split(";")
             points.append(Point(params=[point[0], point[9], *point[13:19]]))
     return points
 
-def export_to_file(file_name:str, points):
-    with open(file_name, "w") as f:
+
+def export_to_file(file_name: str, points):
+    with open(file_name, "w", encoding="utf-8") as f:
         for point in points:
-            f.write(f"{point.t};{point.e/(point.L*point.L)};{point.m/(point.L*point.L)};{point.afm/(point.L*point.L)};{point.C()};{point.kappa()};{point.af_kappa()}\n")
-    return
+            f.write(
+                f"{point.t};{point.e/(point.L*point.L)};{point.m/(point.L*point.L)};"
+                f"{point.afm/(point.L*point.L)};{point.C()};{point.kappa()};{point.af_kappa()}\n"
+            )
 
 
 def main():
@@ -53,10 +54,12 @@ def main():
     except FileNotFoundError:
         print("Файл не найден, укажите верный файл")
         return
-    try:    
+    try:
         export_to_file(export_file, points)
     except FileNotFoundError:
         print("Файл не найден, укажите верный файл")
         return
 
-main()
+
+if __name__ == "__main__":
+    main()

@@ -18,10 +18,24 @@
 │       └── main.go         # Точка входа: чтение input.csv и запись output.csv
 ├── ising/
 │   └── ising.go            # Реализация модели Изинга
-├── task-parser3.py         # Генерация input.csv из JSON
-├── raw_data_converter.py   # Постобработка (C, X, Xafm)
-├── run_simulation.bat      # Автоматический запуск всего пайплайна
-├── params-sample2d.json    # Пример входных параметров
+├── internal/
+│   └── csvio/
+│       └── input.go        # Парсинг и валидация строк input.csv
+├── scripts/
+│   ├── make_input_csv.py   # Генерация input.csv из JSON
+│   ├── make_result_csv.py  # Постобработка (C, X, Xafm)
+│   └── graph_tool.py       # Внешний скрипт построения графиков (без изменений)
+├── configs/
+│   └── params-sample2d.json # Пример входных параметров
+├── data/
+│   ├── input/
+│   │   └── input.csv       # Генерируется скриптом
+│   └── output/
+│       ├── output.csv      # Генерируется Go-симуляцией
+│       └── result.csv      # Генерируется постобработкой
+├── tools/
+│   └── run_simulation.bat  # Автоматический запуск всего пайплайна
+├── graph_tool.py           # Совместимость со старым путём запуска
 ├── go.mod
 └── README.md
 ```
@@ -31,7 +45,7 @@
 ## ⚙️ Полный пайплайн
 
 ```
-JSON → task-parser3.py → input.csv → Go → output.csv → raw_data_converter.py → result.csv
+JSON → scripts/make_input_csv.py → data/input/input.csv → Go → data/output/output.csv → scripts/make_result_csv.py → data/output/result.csv
 ```
 
 ---
@@ -69,13 +83,21 @@ T;C;X;Xafm
 Дважды кликнуть:
 
 ```
-run_simulation.bat
+tools/run_simulation.bat
 ```
 
 Или вручную:
 
 ```
-py task-parser3.py params-sample2d.json
+py scripts/make_input_csv.py configs/params-sample2d.json
 go run ./cmd/run/main.go
-py raw_data_converter.py output.csv result.csv
+py scripts/make_result_csv.py data/output/output.csv data/output/result.csv
+py scripts/graph_tool.py data/output/result.csv
+```
+
+Если `matplotlib`/`numpy` не установлены, пайплайн завершится без графиков (с предупреждением).
+Чтобы включить графики:
+
+```
+py -m pip install matplotlib numpy
 ```
