@@ -9,7 +9,7 @@ def mul(a, b):
     pt = params
     return pt
         
-def export(points, a_steps, m_steps, save):
+def export(points:list, a_steps:int, m_steps:int, save:int):
     with open(f"input.csv", "a") as output:
         for point in points:
             for parameter in point:
@@ -84,7 +84,7 @@ def fillParameterList(p, parameterList, errorsList = []):
 def main():
     
     reset()
-
+    points = []
     mStepsDefault, aStepsDefault = 0, 0
     try:
         file_name = sys.argv[1]
