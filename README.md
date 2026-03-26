@@ -32,7 +32,8 @@
 │   │   └── input.csv       # Генерируется скриптом
 │   └── output/
 │       ├── output.csv      # Генерируется Go-симуляцией
-│       └── result.csv      # Генерируется постобработкой
+│       ├── result.csv      # Генерируется постобработкой
+│       └── plots/          # PNG-графики (C, M, E, ...)
 ├── tools/
 │   └── run_simulation.bat  # Автоматический запуск всего пайплайна
 ├── graph_tool.py           # Совместимость со старым путём запуска
@@ -76,6 +77,8 @@ L;J1;J2;J3;J4;J5;J6;copies;h;T;aSteps;mSteps;save;E;E2;Mtot;M2;Afm;Afm2
 T;C;X;Xafm
 ```
 
+PNG-графики сохраняются в `data/output/plots`.
+
 ---
 
 ## ▶️ Запуск
@@ -95,8 +98,11 @@ py scripts/make_result_csv.py data/output/output.csv data/output/result.csv
 py scripts/graph_tool.py data/output/result.csv
 ```
 
-Если `matplotlib`/`numpy` не установлены, пайплайн завершится без графиков (с предупреждением).
-Чтобы включить графики:
+`tools/run_simulation.bat` автоматически проверяет наличие `numpy` и `matplotlib` перед шагом графиков.
+Если библиотек нет, bat-файл пытается установить их автоматически.
+Если установка не удалась, пайплайн завершается без графиков (с предупреждением).
+
+При необходимости можно установить вручную:
 
 ```
 py -m pip install matplotlib numpy
