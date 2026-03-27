@@ -1,28 +1,22 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-import json
-import os
 import sys
-
-
-OUTPUT_PATH = os.path.join("data", "input", "input.csv")
-
+import json
 
 def mul(a, b):
     params = a.copy()
     params.append(b)
-    return params
-
-
-def export(points, a_steps, m_steps, save):
-    with open(OUTPUT_PATH, "a", encoding="utf-8") as output:
+    pt = params
+    return pt
+        
+def export(points:list, a_steps:int, m_steps:int, save:int):
+    with open(f"input.csv", "a") as output:
         for point in points:
             for parameter in point:
                 output.write(f"{parameter};")
             output.write(f"{a_steps};{m_steps};{save}\n")
 
-
-def cartesian_product(params: list):
+def cartesian_product(params:list):
     points = []
     for bank in params:
         res = []
@@ -33,45 +27,41 @@ def cartesian_product(params: list):
             continue
         for a in points:
             for b in bank:
-                res.append(mul(a, b))
+                res.append(mul(a,b))
         points = res
     return points
 
-
 def reset():
-    os.makedirs(os.path.dirname(OUTPUT_PATH), exist_ok=True)
-    with open(OUTPUT_PATH, "w", encoding="utf-8"):
+    with open("input.csv", "w") as f:
         pass
 
-
-def fill_parameter_list(p, parameter_list, errors_list=None):
-    if errors_list is None:
-        errors_list = []
+def fillParameterList(p, parameterList, errorsList = []):
     if isinstance(p, int) or isinstance(p, float):
-        parameter_list.append(p)
+        parameterList.append((p))
         return
     if isinstance(p, list):
         for el in p:
-            fill_parameter_list(el, parameter_list, errors_list)
+            fillParameterList(el,parameterList,errorsList)
         return
     if isinstance(p, dict):
-        if "begin" not in p:
-            errors_list.append("ошибка диапазона: отсутствует поле begin")
+        #проверки
+        if not "begin" in p:
+            errorsList.append("ошибка диапазона: отсутствует поле begin")
             return
-        if "step" not in p:
-            errors_list.append("ошибка диапазона: отсутствует поле step")
+        if not "step" in p:
+            errorsList.append("ошибка диапазона: отсутствует поле step")
             return
-        if "end" not in p:
-            errors_list.append("ошибка диапазона: отсутствует поле end")
+        if not "end" in p:
+            errorsList.append("ошибка диапазона: отсутствует поле end")
             return
         if not (isinstance(p["begin"], int) or isinstance(p["begin"], float)):
-            errors_list.append("ошибка диапазона: поле begin должно иметь численное значение")
+            errorsList.append("ошибка диапазона: поле begin должно иметь численное значение")
             return
         if not (isinstance(p["end"], int) or isinstance(p["end"], float)):
-            errors_list.append("ошибка диапазона: поле end должно иметь численное значение")
+            errorsList.append("ошибка диапазона: поле end должно иметь численное значение")
             return
         if not (isinstance(p["step"], int) or isinstance(p["step"], float)):
-            errors_list.append("ошибка диапазона: поле step должно иметь численное значение")
+            errorsList.append("ошибка диапазона: поле step должно иметь численное значение")
             return
         val = begin = p["begin"]
         end = p["end"]
@@ -79,29 +69,33 @@ def fill_parameter_list(p, parameter_list, errors_list=None):
 
         if begin < end:
             while val < end:
-                parameter_list.append(round(val, 6))
+                parameterList.append((round(val,6)))
                 val += abs(step)
-                val = round(val, 6)
+                val = round(val,6)
         if begin > end:
             while val > end:
-                parameter_list.append(round(val, 6))
+                parameterList.append((round(val,6)))
                 val -= abs(step)
-                val = round(val, 6)
-        parameter_list.append(end)
+                val = round(val,6)
+        parameterList.append((end))
         return
 
 
 def main():
+    
     reset()
-
-    m_steps_default, a_steps_default = 0, 0
+    points = []
+    mStepsDefault, aStepsDefault = 0, 0
     try:
         file_name = sys.argv[1]
     except IndexError:
         print("Файл задач не найден, укажите файл")
         return
+    except FileNotFoundError:
+        print("Файл указан неверно")
+        return
 
-    with open(file_name, encoding="utf-8") as json_file:
+    with open(file_name) as json_file:
         jsn = json.load(json_file)
     tpl = jsn["tpl"]
 
@@ -112,30 +106,29 @@ def main():
         if "save" in task:
             save = task["save"]
         if "aSteps" in task:
-            if not isinstance(task["aSteps"], int):
+            if not (isinstance(task["aSteps"], int)):
                 print("поле aSteps должно иметь целочисленное значение")
                 continue
-            a_steps_default = task["aSteps"]
+            aStepsDefault = task["aSteps"]
         if "mSteps" in task:
-            if not isinstance(task["mSteps"], int):
+            if not (isinstance(task["mSteps"], int)):
                 print("поле mSteps должно иметь целочисленное значение")
                 continue
-            m_steps_default = task["mSteps"]
-        if a_steps_default + m_steps_default == 0:
+            mStepsDefault = task["mSteps"]
+        if aStepsDefault + mStepsDefault == 0:
             continue
         for p in tpl:
             plist = []
-            fill_parameter_list(task[p], plist, errors)
+            fillParameterList(task[p], plist, errors)
             if len(errors) > 0:
                 for err in errors:
-                    print(err)
+                    print(err)                   
                     break
             data.append(plist)
 
-            points = cartesian_product(data)
+            points = cartesian_product(data) 
         if len(errors) == 0:
-            export(points, a_steps_default, m_steps_default, save)
-
+            export(points, aStepsDefault, mStepsDefault, save)
 
 if __name__ == "__main__":
     main()

@@ -14,13 +14,13 @@ import (
 func main() {
 	var sim *ising.Simulator
 	var currentL, currentCopies int
-
+	// файл из функции парсера
 	inputFile, err := os.Open("data/input/input.csv")
 	if err != nil {
 		log.Fatalf("cannot open input.csv: %v", err)
 	}
 	defer inputFile.Close()
-
+	// передать на вход путь
 	reader := csv.NewReader(inputFile)
 	reader.Comma = ';'
 
@@ -29,7 +29,7 @@ func main() {
 		log.Fatalf("cannot create results.csv: %v", err)
 	}
 	defer outputFile.Close()
-
+	// передать на вход путь
 	writer := csv.NewWriter(outputFile)
 	writer.Comma = ';'
 	defer writer.Flush()
