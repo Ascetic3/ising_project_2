@@ -74,7 +74,7 @@ L;J1;J2;J3;J4;J5;J6;copies;h;T;aSteps;mSteps;save;E;E2;Mtot;M2;Afm;Afm2
 Файл result.csv содержит:
 
 ```
-T;C;X;Xafm
+T;E;M;afm;C;X;Xafm
 ```
 
 PNG-графики сохраняются в `data/output/plots`.
