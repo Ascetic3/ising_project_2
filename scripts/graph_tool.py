@@ -1,7 +1,6 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import sys
-import os
 
 #нам нужно C, M, E, kappa
 def read_file(file_names:list):
@@ -21,8 +20,6 @@ def read_file(file_names:list):
 
 def plot(points:list,temp:list, name:str):
     x_points = np.array(temp[0])
-    if not os.path.exists("./graphs"):
-        os.makedirs("./graphs")
 
     for i in range(len(points)):
         y_points = np.array(points[i])
@@ -32,7 +29,7 @@ def plot(points:list,temp:list, name:str):
     plt.xlabel("T")
     plt.ylabel(name)
     plt.legend()
-    plt.savefig("./graphs/"+name+'.png', dpi=300, bbox_inches='tight')
+    plt.savefig(name + '.png', dpi=300, bbox_inches='tight')
     plt.show()
 
 def main():

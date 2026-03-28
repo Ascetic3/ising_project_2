@@ -33,10 +33,9 @@
 │   └── output/
 │       ├── output.csv      # Генерируется Go-симуляцией
 │       ├── result.csv      # Генерируется постобработкой
-│       └── plots/          # PNG-графики (C, M, E, ...)
+│       └── plots/          # PNG-графики (run_simulation.bat делает cd сюда перед graph_tool)
 ├── tools/
 │   └── run_simulation.bat  # Автоматический запуск всего пайплайна
-├── graph_tool.py           # Совместимость со старым путём запуска
 ├── go.mod
 └── README.md
 ```
@@ -77,7 +76,7 @@ L;J1;J2;J3;J4;J5;J6;copies;h;T;aSteps;mSteps;save;E;E2;Mtot;M2;Afm;Afm2
 T;E;M;afm;C;X;Xafm
 ```
 
-PNG-графики сохраняются в `data/output/plots`.
+Скрипт `graph_tool.py` сохраняет PNG в текущую рабочую папку. Батник перед графиками делает `cd` в `data/output/plots`, поэтому файлы оказываются прямо в `data/output/plots/`. При ручном запуске из корня репозитория PNG появятся в корне.
 
 ---
 

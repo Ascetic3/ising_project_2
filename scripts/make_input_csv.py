@@ -2,6 +2,10 @@
 # -*- coding: utf-8 -*-
 import sys
 import json
+import os
+
+# Go читает data/input/input.csv (см. cmd/run).
+_INPUT = os.path.join("data", "input", "input.csv")
 
 def mul(a, b):
     params = a.copy()
@@ -10,7 +14,7 @@ def mul(a, b):
     return pt
         
 def export(points:list, a_steps:int, m_steps:int, save:int):
-    with open(f"input.csv", "a") as output:
+    with open(_INPUT, "a") as output:
         for point in points:
             for parameter in point:
                 output.write(f"{parameter};")
@@ -32,7 +36,8 @@ def cartesian_product(params:list):
     return points
 
 def reset():
-    with open("input.csv", "w") as f:
+    os.makedirs(os.path.dirname(_INPUT), exist_ok=True)
+    with open(_INPUT, "w") as f:
         pass
 
 def fillParameterList(p, parameterList, errorsList = []):
