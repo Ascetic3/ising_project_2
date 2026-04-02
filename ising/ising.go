@@ -38,7 +38,7 @@ func pbc(x, L int) int {
 	return x % L
 }
 
-func calcParameters(lattice array2d, L int, J1, J2, h float64, energy, moment, afm *float64) {
+func calcParameters(lattice array2d, L int, J1, J2, K, h float64, energy, moment, afm *float64) {
 	*energy = 0
 	*moment = 0
 	*afm = 0
@@ -53,6 +53,8 @@ func calcParameters(lattice array2d, L int, J1, J2, h float64, energy, moment, a
 			*energy += -J1 * float64(S) * float64(Sb)
 			*energy += -J2 * float64(S) * float64(Sd1)
 			*energy += -J2 * float64(S) * float64(Sd2)
+			// Union Jack: плакетка (x,y), (x+1,y), (x,y+1), (x+1,y+1); Srb = Sd1.
+			*energy += -K * float64(S) * float64(Sr) * float64(Sb) * float64(Sd1)
 			*energy += -h * float64(S)
 			*moment += float64(S)
 
@@ -65,7 +67,7 @@ func calcParameters(lattice array2d, L int, J1, J2, h float64, energy, moment, a
 	}
 }
 
-func mcStep(lattice array2d, L int, J1, J2, h, T float64, x, y int) {
+func mcStep(lattice array2d, L int, J1, J2, K, h, T float64, x, y int) {
 	S0 := lattice[x][y]
 	S1 := -S0
 	Sr := lattice[pbc(x+1, L)][y]
@@ -78,18 +80,21 @@ func mcStep(lattice array2d, L int, J1, J2, h, T float64, x, y int) {
 	Sd4 := lattice[pbc(x-1, L)][pbc(y-1, L)]
 	nnSum := Sl + Sr + St + Sb
 	nnnSum := Sd1 + Sd2 + Sd3 + Sd4
-	dE := float64(S1-S0) * (-h - J1*float64(nnSum) - J2*float64(nnnSum))
+	// Четыре квадрата (плакетки), в которых участвует спин (x,y).
+	sum4 := Sr*Sb*Sd1 + Sl*Sb*Sd2 + Sr*St*Sd3 + Sl*St*Sd4
+	// Эквивалентно старой формуле при K=0: 2*S0*(J1*nn + J2*nnn + h).
+	dE := 2 * float64(S0) * (J1*float64(nnSum) + J2*float64(nnnSum) + K*float64(sum4) + h)
 	if rand.Float64() < math.Exp(-dE/T) {
 		lattice[x][y] = S1
 	}
 }
 
-func nextStep(lattice array2d, L int, J1, J2, h, T float64) {
+func nextStep(lattice array2d, L int, J1, J2, K, h, T float64) {
 	N := L * L
 	for i := 0; i < N; i++ {
 		x := rand.Intn(L)
 		y := rand.Intn(L)
-		mcStep(lattice, L, J1, J2, h, T, x, y)
+		mcStep(lattice, L, J1, J2, K, h, T, x, y)
 	}
 }
 
@@ -136,7 +141,7 @@ func (s *Simulator) ResetFerromagnetic() {
 	s.lattices = lattices
 }
 
-func (s *Simulator) Run(J1, J2, h, T float64, aSteps, mSteps int) (ResultRow, error) {
+func (s *Simulator) Run(J1, J2, K, h, T float64, aSteps, mSteps int) (ResultRow, error) {
 	if aSteps <= 0 {
 		return ResultRow{}, fmt.Errorf("ASteps must be > 0")
 	}
@@ -160,17 +165,17 @@ func (s *Simulator) Run(J1, J2, h, T float64, aSteps, mSteps int) (ResultRow, er
 		lattice := s.lattices[copyIdx]
 
 		for sIdx := 0; sIdx < aSteps; sIdx++ {
-			nextStep(lattice, L, J1, J2, h, T)
+			nextStep(lattice, L, J1, J2, K, h, T)
 		}
 
 		// Измерения.
 		for sIdx := 0; sIdx < mSteps; sIdx++ {
-			nextStep(lattice, L, J1, J2, h, T)
+			nextStep(lattice, L, J1, J2, K, h, T)
 
 			energy := 0.0
 			moment := 0.0
 			afm := 0.0
-			calcParameters(lattice, L, J1, J2, h, &energy, &moment, &afm)
+			calcParameters(lattice, L, J1, J2, K, h, &energy, &moment, &afm)
 
 			E += energy / float64(mSteps) / float64(copies)
 			E2 += energy * energy / float64(mSteps) / float64(copies)
@@ -181,7 +186,7 @@ func (s *Simulator) Run(J1, J2, h, T float64, aSteps, mSteps int) (ResultRow, er
 			Afm2 += afm * afm / float64(mSteps) / float64(copies)
 		}
 	}
-	fmt.Printf("L=%d, J1=%.3f, J2=%.3f, h=%.3f: E=%.3f, M=%.3f, Afm=%.3f \n", L, J1, J2, h, E, M, Afm)
+	fmt.Printf("L=%d, J1=%.3f, J2=%.3f, K=%.3f, h=%.3f: E=%.3f, M=%.3f, Afm=%.3f \n", L, J1, J2, K, h, E, M, Afm)
 	return ResultRow{
 		T:    T,
 		E:    E,
