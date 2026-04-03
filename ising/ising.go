@@ -40,24 +40,26 @@ func pbc(x, L int) int {
 
 // Couplings задаёт направленные коэффициенты обменного взаимодействия на Union Jack.
 // Направления соответствуют соседям относительно узла (x,y):
-//   up    : (x,   y-1)
-//   right : (x+1, y  )
-//   down  : (x,   y+1)
-//   left  : (x-1, y  )
-//   ur    : (x+1, y-1)
-//   dr    : (x+1, y+1)
-//   ul    : (x-1, y-1)
-//   dl    : (x-1, y+1)
+//
+//	up    : (x,   y-1)
+//	right : (x+1, y  )
+//	down  : (x,   y+1)
+//	left  : (x-1, y  )
+//	ur    : (x+1, y-1)
+//	dr    : (x+1, y+1)
+//	ul    : (x-1, y-1)
+//	dl    : (x-1, y+1)
 type Couplings struct {
 	up, right, down, left float64
 	dl, dr, ur, ul        float64
 }
 
 // siteClass возвращает класс узла в элементарной ячейке 2x2:
-//   0 = A  (x%2==0 && y%2==0)
-//   1 = B1 (x%2==1 && y%2==0)
-//   2 = B2 (x%2==0 && y%2==1)
-//   3 = B3 (x%2==1 && y%2==1)
+//
+//	0 = A  (x%2==0 && y%2==0)
+//	1 = B1 (x%2==1 && y%2==0)
+//	2 = B2 (x%2==0 && y%2==1)
+//	3 = B3 (x%2==1 && y%2==1)
 func siteClass(x, y int) int {
 	xEven := x%2 == 0
 	yEven := y%2 == 0
@@ -77,14 +79,15 @@ func siteClass(x, y int) int {
 // чтобы каждая связь имела согласованный коэффициент с обеих сторон.
 //
 // Для класса 0 (A) используется базовый шаблон из условия:
-//   up    -> J1
-//   right -> J2
-//   down  -> J3
-//   left  -> J4
-//   down-left  -> J5
-//   down-right -> J6
-//   up-right   -> J5
-//   up-left    -> J6
+//
+//	up    -> J1
+//	right -> J2
+//	down  -> J3
+//	left  -> J4
+//	down-left  -> J5
+//	down-right -> J6
+//	up-right   -> J5
+//	up-left    -> J6
 //
 // Для остальных классов используется отражение/поворот шаблона A.
 func couplingsForSite(class int, J1, J2, J3, J4, J5, J6 float64) Couplings {

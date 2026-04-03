@@ -24,8 +24,10 @@ type Params struct {
 }
 
 func ParseRecord(record []string, rowIndex int) (Params, bool, error) {
-	if len(record) != 13 {
-		return Params{}, false, fmt.Errorf("expected 13 fields in input.csv, got %d: %v", len(record), record)
+	// Новый формат:
+	// L;J1;J2;J3;J4;J5;J6;K;copies;h;T;aSteps;mSteps;save
+	if len(record) != 14 {
+		return Params{}, false, fmt.Errorf("expected 14 fields in input.csv, got %d: %v", len(record), record)
 	}
 
 	if rowIndex == 0 && strings.EqualFold(strings.TrimSpace(record[0]), "L") {
@@ -69,37 +71,40 @@ func ParseRecord(record []string, rowIndex int) (Params, bool, error) {
 		return Params{}, false, fmt.Errorf("invalid K value %q: %w", record[7], err)
 	}
 
-	// В текущем input.csv нет отдельной колонки copies.
-	// Чтобы не ломать существующий запуск, используем K как число копий (целая часть),
-	// но гарантируем минимум 1, чтобы NewSimulator не падал при K=0.
-	copies := int(K)
+	// ВАЖНО:
+	// copies снова читается как отдельное поле input.csv.
+	// Костыль с использованием K как источника copies удалён.
+	copies, err := strconv.Atoi(record[8])
+	if err != nil {
+		return Params{}, false, fmt.Errorf("invalid copies value %q: %w", record[8], err)
+	}
 	if copies < 1 {
-		copies = 1
+		return Params{}, false, fmt.Errorf("copies must be >= 1, got %d", copies)
 	}
 
-	h, err := strconv.ParseFloat(record[8], 64)
+	h, err := strconv.ParseFloat(record[9], 64)
 	if err != nil {
-		return Params{}, false, fmt.Errorf("invalid h value %q: %w", record[8], err)
+		return Params{}, false, fmt.Errorf("invalid h value %q: %w", record[9], err)
 	}
 
-	T, err := strconv.ParseFloat(record[9], 64)
+	T, err := strconv.ParseFloat(record[10], 64)
 	if err != nil {
-		return Params{}, false, fmt.Errorf("invalid T value %q: %w", record[9], err)
+		return Params{}, false, fmt.Errorf("invalid T value %q: %w", record[10], err)
 	}
 
-	aSteps, err := strconv.Atoi(record[10])
+	aSteps, err := strconv.Atoi(record[11])
 	if err != nil {
-		return Params{}, false, fmt.Errorf("invalid aSteps value %q: %w", record[10], err)
+		return Params{}, false, fmt.Errorf("invalid aSteps value %q: %w", record[11], err)
 	}
 
-	mSteps, err := strconv.Atoi(record[11])
+	mSteps, err := strconv.Atoi(record[12])
 	if err != nil {
-		return Params{}, false, fmt.Errorf("invalid mSteps value %q: %w", record[11], err)
+		return Params{}, false, fmt.Errorf("invalid mSteps value %q: %w", record[12], err)
 	}
 
-	saveVal, err := strconv.Atoi(record[12])
+	saveVal, err := strconv.Atoi(record[13])
 	if err != nil {
-		return Params{}, false, fmt.Errorf("invalid save value %q: %w", record[12], err)
+		return Params{}, false, fmt.Errorf("invalid save value %q: %w", record[13], err)
 	}
 
 	return Params{

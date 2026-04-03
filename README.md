@@ -45,7 +45,7 @@
 ## ⚙️ Полный пайплайн
 
 ```
-JSON → scripts/make_input_csv.py → data/input/input.csv → Go → data/output/output.csv → scripts/make_result_csv.py → data/output/result.csv
+JSON → scripts/make_input_csv.py → data/input/input.csv → Go (Union Jack Ising) → data/output/output.csv → scripts/make_result_csv.py → data/output/result.csv
 ```
 
 ---
@@ -55,7 +55,7 @@ JSON → scripts/make_input_csv.py → data/input/input.csv → Go → data/outp
 Разделитель — `;`
 
 ```
-L;J1;J2;J3;J4;J5;J6;copies;h;T;aSteps;mSteps;save
+L;J1;J2;J3;J4;J5;J6;K;copies;h;T;aSteps;mSteps;save
 ```
 
 ---
@@ -63,7 +63,7 @@ L;J1;J2;J3;J4;J5;J6;copies;h;T;aSteps;mSteps;save
 ## 📤 Формат выходного файла `output.csv`
 
 ```
-L;J1;J2;J3;J4;J5;J6;copies;h;T;aSteps;mSteps;save;E;E2;Mtot;M2;Afm;Afm2
+L;J1;J2;J3;J4;J5;J6;K;copies;h;T;aSteps;mSteps;save;E;E2;Mtot;M2;Afm;Afm2
 ```
 
 ---
@@ -76,7 +76,26 @@ L;J1;J2;J3;J4;J5;J6;copies;h;T;aSteps;mSteps;save;E;E2;Mtot;M2;Afm;Afm2
 T;E;M;afm;C;X;Xafm
 ```
 
-Скрипт `graph_tool.py` сохраняет PNG в текущую рабочую папку. Батник перед графиками делает `cd` в `data/output/plots`, поэтому файлы оказываются прямо в `data/output/plots/`. При ручном запуске из корня репозитория PNG появятся в корне.
+Скрипт `graph_tool.py` сохраняет PNG в `./graphs` относительно текущей рабочей папки.
+
+- При запуске через `tools/run_simulation.bat` (там выполняется `cd data/output/plots`) графики будут в `data/output/plots/graphs/`.
+- При ручном запуске из корня репозитория графики будут в `./graphs` в корне проекта.
+
+---
+
+## 💾 Логика параметра `save`
+
+В `cmd/run/main.go` используется следующая логика:
+
+- `Simulator` пересоздаётся только если:
+  - `sim == nil`
+  - изменился `L`
+  - изменился `copies`
+- если `L` и `copies` не изменились:
+  - `save = 1` → используется конфигурация предыдущей температуры
+  - `save = 0` → вызывается `sim.ResetFerromagnetic()`
+
+
 
 ---
 

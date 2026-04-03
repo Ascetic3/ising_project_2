@@ -63,9 +63,11 @@ func run() (err error) {
 		}
 
 		// ВАЖНО:
-		// Мы НЕ сбрасываем решётку при смене температуры.
-		// Это необходимо для корректного моделирования фазового перехода.
-		// Используется конфигурация предыдущей температуры.
+		// save=1 -> продолжаем эволюцию с предыдущей конфигурации.
+		// save=0 -> сбрасываем текущий Simulator в ферромагнитное состояние (+1).
+		//
+		// Новый Simulator создаётся только при смене геометрии/набора копий:
+		// sim==nil, изменение L или изменение Copies.
 		if sim == nil || params.L != currentL || params.Copies != currentCopies {
 			sim, err = ising.NewSimulator(params.L, params.Copies)
 			if err != nil {
@@ -73,6 +75,8 @@ func run() (err error) {
 			}
 			currentL = params.L
 			currentCopies = params.Copies
+		} else if !params.Save {
+			sim.ResetFerromagnetic()
 		}
 
 		last, err := sim.Run(
