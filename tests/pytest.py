@@ -40,7 +40,7 @@ def compare(subject:str, reference:str):
                 accuracy.append(abs(100 - (test_data[i][j]/(ref_data[i][j]/100))))
             except ZeroDivisionError:
                 accuracy.append(float(0))
-    print(100 - np.mean(accuracy))
+    print(f"Точность данных -{100 - np.mean(accuracy)}%")
     return accuracy
 
 
@@ -74,7 +74,6 @@ def main():
     else:
         raise FileNotFoundError
         
-    print(results, ref)
     res = compare(results, ref)
 
     deviation_output(res)
