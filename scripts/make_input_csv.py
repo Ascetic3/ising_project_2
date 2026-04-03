@@ -35,7 +35,7 @@ def cartesian_product(params:list):
         points = res
     return points
 
-def clear_input():
+def clear_input_csv():
     os.makedirs(os.path.dirname(_INPUT), exist_ok=True)
     with open(_INPUT, "w") as f:
         pass
@@ -88,7 +88,7 @@ def fill_parameter_list(p, parameterList, errorsList = []):
 
 def main():
     
-    clear_input()
+    clear_input_csv()
     points = []
     mStepsDefault, aStepsDefault = 0, 0
     try:
