@@ -62,7 +62,11 @@ func run() (err error) {
 			continue
 		}
 
-		if sim == nil || !params.Save || params.L != currentL || params.Copies != currentCopies {
+		// ВАЖНО:
+		// Мы НЕ сбрасываем решётку при смене температуры.
+		// Это необходимо для корректного моделирования фазового перехода.
+		// Используется конфигурация предыдущей температуры.
+		if sim == nil || params.L != currentL || params.Copies != currentCopies {
 			sim, err = ising.NewSimulator(params.L, params.Copies)
 			if err != nil {
 				return fmt.Errorf("cannot create simulator: %w", err)
@@ -71,10 +75,14 @@ func run() (err error) {
 			currentCopies = params.Copies
 		}
 
-		last, err := sim.Run(params.J1, params.J2, params.K, params.H, params.T, params.ASteps, params.MSteps)
+		last, err := sim.Run(
+			params.J1, params.J2, params.J3, params.J4, params.J5, params.J6,
+			params.K, params.H, params.T,
+			params.ASteps, params.MSteps,
+		)
 		if err != nil {
-			return fmt.Errorf("simulation failed for L=%d, J1=%.3f, J2=%.3f, K=%.3f, h=%.3f: %w",
-				params.L, params.J1, params.J2, params.K, params.H, err)
+			return fmt.Errorf("simulation failed for L=%d, J=[%.3f %.3f %.3f %.3f %.3f %.3f], K=%.3f, h=%.3f: %w",
+				params.L, params.J1, params.J2, params.J3, params.J4, params.J5, params.J6, params.K, params.H, err)
 		}
 
 		outRecord := append(record,

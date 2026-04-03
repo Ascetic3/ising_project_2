@@ -10,7 +10,11 @@ type Params struct {
 	L      int
 	J1     float64
 	J2     float64
-	K      float64 // четырёхспиновое взаимодействие (в CSV: колонка J3)
+	J3     float64
+	J4     float64
+	J5     float64
+	J6     float64
+	K      float64 // четырёхспиновое взаимодействие (плакетки)
 	Copies int
 	H      float64
 	T      float64
@@ -42,23 +46,35 @@ func ParseRecord(record []string, rowIndex int) (Params, bool, error) {
 	if err != nil {
 		return Params{}, false, fmt.Errorf("invalid J2 value %q: %w", record[2], err)
 	}
-	K, err := strconv.ParseFloat(record[3], 64)
+
+	J3, err := strconv.ParseFloat(record[3], 64)
 	if err != nil {
-		return Params{}, false, fmt.Errorf("invalid J3/K value %q: %w", record[3], err)
+		return Params{}, false, fmt.Errorf("invalid J3 value %q: %w", record[3], err)
 	}
-	if _, err := strconv.ParseFloat(record[4], 64); err != nil {
+	J4, err := strconv.ParseFloat(record[4], 64)
+	if err != nil {
 		return Params{}, false, fmt.Errorf("invalid J4 value %q: %w", record[4], err)
 	}
-	if _, err := strconv.ParseFloat(record[5], 64); err != nil {
+	J5, err := strconv.ParseFloat(record[5], 64)
+	if err != nil {
 		return Params{}, false, fmt.Errorf("invalid J5 value %q: %w", record[5], err)
 	}
-	if _, err := strconv.ParseFloat(record[6], 64); err != nil {
+	J6, err := strconv.ParseFloat(record[6], 64)
+	if err != nil {
 		return Params{}, false, fmt.Errorf("invalid J6 value %q: %w", record[6], err)
 	}
 
-	copies, err := strconv.Atoi(record[7])
+	K, err := strconv.ParseFloat(record[7], 64)
 	if err != nil {
-		return Params{}, false, fmt.Errorf("invalid copies value %q: %w", record[7], err)
+		return Params{}, false, fmt.Errorf("invalid K value %q: %w", record[7], err)
+	}
+
+	// В текущем input.csv нет отдельной колонки copies.
+	// Чтобы не ломать существующий запуск, используем K как число копий (целая часть),
+	// но гарантируем минимум 1, чтобы NewSimulator не падал при K=0.
+	copies := int(K)
+	if copies < 1 {
+		copies = 1
 	}
 
 	h, err := strconv.ParseFloat(record[8], 64)
@@ -90,6 +106,10 @@ func ParseRecord(record []string, rowIndex int) (Params, bool, error) {
 		L:      L,
 		J1:     J1,
 		J2:     J2,
+		J3:     J3,
+		J4:     J4,
+		J5:     J5,
+		J6:     J6,
 		K:      K,
 		Copies: copies,
 		H:      h,

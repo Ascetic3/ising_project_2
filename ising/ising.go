@@ -6,16 +6,16 @@ import (
 	"math/rand"
 )
 
-type Params struct {
-	L      int
-	T1     float64
-	T2     float64
-	Tcount int
+// type Params struct {
+// 	L      int
+// 	T1     float64
+// 	T2     float64
+// 	Tcount int
 
-	ASteps int
-	MSteps int
-	Copies int
-}
+// 	ASteps int
+// 	MSteps int
+// 	Copies int
+// }
 
 type ResultRow struct {
 	T float64
@@ -38,7 +38,81 @@ func pbc(x, L int) int {
 	return x % L
 }
 
-func calcParameters(lattice array2d, L int, J1, J2, K, h float64, energy, moment, afm *float64) {
+// Couplings задаёт направленные коэффициенты обменного взаимодействия на Union Jack.
+// Направления соответствуют соседям относительно узла (x,y):
+//   up    : (x,   y-1)
+//   right : (x+1, y  )
+//   down  : (x,   y+1)
+//   left  : (x-1, y  )
+//   ur    : (x+1, y-1)
+//   dr    : (x+1, y+1)
+//   ul    : (x-1, y-1)
+//   dl    : (x-1, y+1)
+type Couplings struct {
+	up, right, down, left float64
+	dl, dr, ur, ul        float64
+}
+
+// siteClass возвращает класс узла в элементарной ячейке 2x2:
+//   0 = A  (x%2==0 && y%2==0)
+//   1 = B1 (x%2==1 && y%2==0)
+//   2 = B2 (x%2==0 && y%2==1)
+//   3 = B3 (x%2==1 && y%2==1)
+func siteClass(x, y int) int {
+	xEven := x%2 == 0
+	yEven := y%2 == 0
+	switch {
+	case xEven && yEven:
+		return 0
+	case !xEven && yEven:
+		return 1
+	case xEven && !yEven:
+		return 2
+	default:
+		return 3
+	}
+}
+
+// couplingsForSite восстанавливает направленные J для узла заданного класса,
+// чтобы каждая связь имела согласованный коэффициент с обеих сторон.
+//
+// Для класса 0 (A) используется базовый шаблон из условия:
+//   up    -> J1
+//   right -> J2
+//   down  -> J3
+//   left  -> J4
+//   down-left  -> J5
+//   down-right -> J6
+//   up-right   -> J5
+//   up-left    -> J6
+//
+// Для остальных классов используется отражение/поворот шаблона A.
+func couplingsForSite(class int, J1, J2, J3, J4, J5, J6 float64) Couplings {
+	switch class {
+	case 0: // A
+		return Couplings{
+			up: J1, right: J2, down: J3, left: J4,
+			dl: J5, dr: J6, ur: J5, ul: J6,
+		}
+	case 1: // B1: отражение относительно вертикальной оси (swap left/right)
+		return Couplings{
+			up: J1, right: J4, down: J3, left: J2,
+			ur: J6, dr: J5, ul: J5, dl: J6,
+		}
+	case 2: // B2: отражение относительно горизонтальной оси (swap up/down)
+		return Couplings{
+			up: J3, right: J2, down: J1, left: J4,
+			ur: J6, dr: J5, ul: J5, dl: J6,
+		}
+	default: // 3: B3 = поворот на 180 градусов (оба отражения)
+		return Couplings{
+			up: J3, right: J4, down: J1, left: J2,
+			ur: J5, dr: J6, ul: J6, dl: J5,
+		}
+	}
+}
+
+func calcParameters(lattice array2d, L int, J1, J2, J3, J4, J5, J6, K, h float64, energy, moment, afm *float64) {
 	*energy = 0
 	*moment = 0
 	*afm = 0
@@ -49,10 +123,15 @@ func calcParameters(lattice array2d, L int, J1, J2, K, h float64, energy, moment
 			Sb := lattice[x][pbc(y+1, L)]
 			Sd1 := lattice[pbc(x+1, L)][pbc(y+1, L)]
 			Sd2 := lattice[pbc(x-1, L)][pbc(y+1, L)]
-			*energy += -J1 * float64(S) * float64(Sr)
-			*energy += -J1 * float64(S) * float64(Sb)
-			*energy += -J2 * float64(S) * float64(Sd1)
-			*energy += -J2 * float64(S) * float64(Sd2)
+
+			// Обменное взаимодействие: учитываем только уникальные связи
+			// right, down, down-right, down-left.
+			c := couplingsForSite(siteClass(x, y), J1, J2, J3, J4, J5, J6)
+			*energy += -c.right * float64(S) * float64(Sr)
+			*energy += -c.down * float64(S) * float64(Sb)
+			*energy += -c.dr * float64(S) * float64(Sd1)
+			*energy += -c.dl * float64(S) * float64(Sd2)
+
 			// Union Jack: плакетка (x,y), (x+1,y), (x,y+1), (x+1,y+1); Srb = Sd1.
 			*energy += -K * float64(S) * float64(Sr) * float64(Sb) * float64(Sd1)
 			*energy += -h * float64(S)
@@ -67,7 +146,7 @@ func calcParameters(lattice array2d, L int, J1, J2, K, h float64, energy, moment
 	}
 }
 
-func mcStep(lattice array2d, L int, J1, J2, K, h, T float64, x, y int) {
+func mcStep(lattice array2d, L int, J1, J2, J3, J4, J5, J6, K, h, T float64, x, y int) {
 	S0 := lattice[x][y]
 	S1 := -S0
 	Sr := lattice[pbc(x+1, L)][y]
@@ -78,23 +157,36 @@ func mcStep(lattice array2d, L int, J1, J2, K, h, T float64, x, y int) {
 	Sd2 := lattice[pbc(x-1, L)][pbc(y+1, L)]
 	Sd3 := lattice[pbc(x+1, L)][pbc(y-1, L)]
 	Sd4 := lattice[pbc(x-1, L)][pbc(y-1, L)]
-	nnSum := Sl + Sr + St + Sb
-	nnnSum := Sd1 + Sd2 + Sd3 + Sd4
+
+	// Класс узла определяет, какие направленные J использовать для восьми ближайших соседей.
+	c := couplingsForSite(siteClass(x, y), J1, J2, J3, J4, J5, J6)
+
+	// pairSum — сумма по 8 направлениям (все спины-соседи помножены на соответствующие коэффициенты).
+	pairSum := c.up*float64(St) +
+		c.right*float64(Sr) +
+		c.down*float64(Sb) +
+		c.left*float64(Sl) +
+		c.dl*float64(Sd2) +
+		c.dr*float64(Sd1) +
+		c.ur*float64(Sd3) +
+		c.ul*float64(Sd4)
+
 	// Четыре квадрата (плакетки), в которых участвует спин (x,y).
 	sum4 := Sr*Sb*Sd1 + Sl*Sb*Sd2 + Sr*St*Sd3 + Sl*St*Sd4
-	// Эквивалентно старой формуле при K=0: 2*S0*(J1*nn + J2*nnn + h).
-	dE := 2 * float64(S0) * (J1*float64(nnSum) + J2*float64(nnnSum) + K*float64(sum4) + h)
+
+	// dE = 2*S0*(pairSum + K*sum4 + h)
+	dE := 2 * float64(S0) * (pairSum + K*float64(sum4) + h)
 	if rand.Float64() < math.Exp(-dE/T) {
 		lattice[x][y] = S1
 	}
 }
 
-func nextStep(lattice array2d, L int, J1, J2, K, h, T float64) {
+func nextStep(lattice array2d, L int, J1, J2, J3, J4, J5, J6, K, h, T float64) {
 	N := L * L
 	for i := 0; i < N; i++ {
 		x := rand.Intn(L)
 		y := rand.Intn(L)
-		mcStep(lattice, L, J1, J2, K, h, T, x, y)
+		mcStep(lattice, L, J1, J2, J3, J4, J5, J6, K, h, T, x, y)
 	}
 }
 
@@ -141,7 +233,7 @@ func (s *Simulator) ResetFerromagnetic() {
 	s.lattices = lattices
 }
 
-func (s *Simulator) Run(J1, J2, K, h, T float64, aSteps, mSteps int) (ResultRow, error) {
+func (s *Simulator) Run(J1, J2, J3, J4, J5, J6, K, h, T float64, aSteps, mSteps int) (ResultRow, error) {
 	if aSteps <= 0 {
 		return ResultRow{}, fmt.Errorf("ASteps must be > 0")
 	}
@@ -165,17 +257,17 @@ func (s *Simulator) Run(J1, J2, K, h, T float64, aSteps, mSteps int) (ResultRow,
 		lattice := s.lattices[copyIdx]
 
 		for sIdx := 0; sIdx < aSteps; sIdx++ {
-			nextStep(lattice, L, J1, J2, K, h, T)
+			nextStep(lattice, L, J1, J2, J3, J4, J5, J6, K, h, T)
 		}
 
 		// Измерения.
 		for sIdx := 0; sIdx < mSteps; sIdx++ {
-			nextStep(lattice, L, J1, J2, K, h, T)
+			nextStep(lattice, L, J1, J2, J3, J4, J5, J6, K, h, T)
 
 			energy := 0.0
 			moment := 0.0
 			afm := 0.0
-			calcParameters(lattice, L, J1, J2, K, h, &energy, &moment, &afm)
+			calcParameters(lattice, L, J1, J2, J3, J4, J5, J6, K, h, &energy, &moment, &afm)
 
 			E += energy / float64(mSteps) / float64(copies)
 			E2 += energy * energy / float64(mSteps) / float64(copies)
@@ -186,7 +278,8 @@ func (s *Simulator) Run(J1, J2, K, h, T float64, aSteps, mSteps int) (ResultRow,
 			Afm2 += afm * afm / float64(mSteps) / float64(copies)
 		}
 	}
-	fmt.Printf("L=%d, J1=%.3f, J2=%.3f, K=%.3f, h=%.3f: E=%.3f, M=%.3f, Afm=%.3f \n", L, J1, J2, K, h, E, M, Afm)
+	fmt.Printf("L=%d: J=[%.3f %.3f %.3f %.3f %.3f %.3f], K=%.3f, h=%.3f: E=%.3f, M=%.3f, Afm=%.3f \n",
+		L, J1, J2, J3, J4, J5, J6, K, h, E, M, Afm)
 	return ResultRow{
 		T:    T,
 		E:    E,
