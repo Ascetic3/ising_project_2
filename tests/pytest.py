@@ -9,11 +9,11 @@ from pathlib import Path
 
 def copying(dirname:str, test:str):
     if not os.path.exists(dirname+"/data/input"+test):
-        shutil.copyfile(dirname+"/tests/"+test, dirname+"/data/input/"+test)
+        shutil.copyfile(dirname+"/tests/"+test, dirname+"/data/input/input.csv")
     return
 
-def output(numbers:list):
-    with open(dirname+"/tests/mean_error.csv", "w") as f:
+def deviation_output(numbers:list):
+    with open(dirname+"/tests/deviation.csv", "w") as f:
         for i in range(len(numbers)):
             if i%19==0 and i > 0:
                 f.write("\n")
@@ -29,8 +29,6 @@ def compare(subject:str, reference:str):
     with open(subject, "r") as file:
         for line in file:
             test_data.append(list(map(float, (line.rstrip("\n").split(";")))))
-
-
 
     with open(reference, "r") as file:
         for line in file:
@@ -79,7 +77,7 @@ def main():
     print(results, ref)
     res = compare(results, ref)
 
-    output(res)
+    deviation_output(res)
     
     
 
