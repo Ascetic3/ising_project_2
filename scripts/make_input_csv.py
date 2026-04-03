@@ -40,13 +40,13 @@ def clear_input():
     with open(_INPUT, "w") as f:
         pass
 
-def fillParameterList(p, parameterList, errorsList = []):
+def fill_parameter_list(p, parameterList, errorsList = []):
     if isinstance(p, int) or isinstance(p, float):
-        parameterList.append((p))
+        parameterList.append(p)
         return
     if isinstance(p, list):
         for el in p:
-            fillParameterList(el, parameterList, errorsList)
+            fill_parameter_list(el, parameterList, errorsList)
         return
     if isinstance(p, dict):
         #проверки
@@ -74,15 +74,15 @@ def fillParameterList(p, parameterList, errorsList = []):
 
         if begin < end:
             while val < end:
-                parameterList.append((round(val,6)))
+                parameterList.append(round(val, 6))
                 val += abs(step)
-                val = round(val,6)
+                val = round(val, 6)
         if begin > end:
             while val > end:
-                parameterList.append((round(val,6)))
+                parameterList.append(round(val, 6))
                 val -= abs(step)
-                val = round(val,6)
-        parameterList.append((end))
+                val = round(val, 6)
+        parameterList.append(end)
         return
 
 
@@ -124,7 +124,7 @@ def main():
             continue
         for p in tpl:
             plist = []
-            fillParameterList(task[p], plist, errors)
+            fill_parameter_list(task[p], plist, errors)
             if len(errors) > 0:
                 for err in errors:
                     print(err)                   
