@@ -56,10 +56,10 @@ type Couplings struct {
 
 // siteClass возвращает класс узла в элементарной ячейке 2x2:
 //
-//	0 = A  (x%2==0 && y%2==0)
-//	1 = B1 (x%2==1 && y%2==0)
-//	2 = B2 (x%2==0 && y%2==1)
-//	3 = B3 (x%2==1 && y%2==1)
+//	0 = blue  (x%2==0 && y%2==0)
+//	1 = red1 (x%2==1 && y%2==0)
+//	2 = red2 (x%2==0 && y%2==1)
+//	3 = red1 (x%2==1 && y%2==1)
 func siteClass(x, y int) int {
 	xEven := x%2 == 0
 	yEven := y%2 == 0
@@ -77,40 +77,28 @@ func siteClass(x, y int) int {
 
 // couplingsForSite восстанавливает направленные J для узла заданного класса,
 // чтобы каждая связь имела согласованный коэффициент с обеих сторон.
-//
-// Для класса 0 (A) используется базовый шаблон из условия:
-//
-//	up    -> J1
-//	right -> J2
-//	down  -> J3
-//	left  -> J4
-//	down-left  -> J5
-//	down-right -> J6
-//	up-right   -> J5
-//	up-left    -> J6
-//
-// Для остальных классов используется отражение/поворот шаблона A.
+
 func couplingsForSite(class int, J1, J2, J3, J4, J5, J6 float64) Couplings {
 	switch class {
-	case 0: // A
+	case 0: // blue
 		return Couplings{
 			up: J1, right: J2, down: J3, left: J4,
 			dl: J5, dr: J6, ur: J5, ul: J6,
 		}
-	case 1: // B1: отражение относительно вертикальной оси (swap left/right)
+	case 1: // red1 справа-вверху
 		return Couplings{
-			up: J1, right: J4, down: J3, left: J2,
-			ur: J6, dr: J5, ul: J5, dl: J6,
+			up: J3, right: J4, down: J1, left: J2,
+			dl: 0, dr: 0, ur: 0, ul: 0,
 		}
-	case 2: // B2: отражение относительно горизонтальной оси (swap up/down)
+	case 2: // red2 справа-вниз
 		return Couplings{
 			up: J3, right: J2, down: J1, left: J4,
 			ur: J6, dr: J5, ul: J5, dl: J6,
 		}
-	default: // 3: B3 = поворот на 180 градусов (оба отражения)
+	default: // 3: red1 снизу-слева
 		return Couplings{
 			up: J3, right: J4, down: J1, left: J2,
-			ur: J5, dr: J6, ul: J6, dl: J5,
+			dl: 0, dr: 0, ur: 0, ul: 0,
 		}
 	}
 }
