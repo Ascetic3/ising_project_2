@@ -81,12 +81,12 @@ func run() (err error) {
 
 		last, err := sim.Run(
 			params.J1, params.J2, params.J3, params.J4, params.J5, params.J6,
-			params.K, params.H, params.T,
+			params.H, params.T,
 			params.ASteps, params.MSteps,
 		)
 		if err != nil {
-			return fmt.Errorf("simulation failed for L=%d, J=[%.3f %.3f %.3f %.3f %.3f %.3f], K=%.3f, h=%.3f: %w",
-				params.L, params.J1, params.J2, params.J3, params.J4, params.J5, params.J6, params.K, params.H, err)
+			return fmt.Errorf("simulation failed for L=%d, J=[%.3f %.3f %.3f %.3f %.3f %.3f], h=%.3f: %w",
+				params.L, params.J1, params.J2, params.J3, params.J4, params.J5, params.J6, params.H, err)
 		}
 
 		outRecord := append(record,

@@ -29,7 +29,7 @@ def read_file(file_name: str):
     with open(file_name, "r", encoding="utf-8") as f:
         for line in f:
             point = line.rstrip().split(";")
-            points.append(Point(params=[point[0], point[10], *point[14:20]]))
+            points.append(Point(params=[point[0], point[9], *point[13:19]]))
     return points
 
 

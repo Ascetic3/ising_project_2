@@ -1,9 +1,10 @@
 @echo off
 chcp 65001 >nul
-setlocal
+setlocal EnableExtensions
 
 set "ROOT=%~dp0.."
 pushd "%ROOT%"
+set "START_TIME=%TIME%"
 
 set "PARAMS=configs\params-sample2d.json"
 set "INPUT=data\input\input.csv"
@@ -101,10 +102,26 @@ start "Ising Graphs" cmd /k "cd /d %PLOTS_DIR% && py ..\..\..\%GRAPH_SCRIPT% ..\
 echo Graph process started.
 
 :after_graphs
+set "END_TIME=%TIME%"
+for /f "tokens=1-4 delims=:.," %%a in ("%START_TIME%") do (
+    set /a "START_CS=(((1%%a-100)*3600)+((1%%b-100)*60)+(1%%c-100))*100+(1%%d-100)"
+)
+for /f "tokens=1-4 delims=:.," %%a in ("%END_TIME%") do (
+    set /a "END_CS=(((1%%a-100)*3600)+((1%%b-100)*60)+(1%%c-100))*100+(1%%d-100)"
+)
+if %END_CS% lss %START_CS% set /a "END_CS+=24*3600*100"
+set /a "ELAPSED_CS=END_CS-START_CS"
+set /a "ELAPSED_H=ELAPSED_CS/(3600*100)"
+set /a "ELAPSED_M=(ELAPSED_CS/(60*100))%%60"
+set /a "ELAPSED_S=(ELAPSED_CS/100)%%60"
+set /a "ELAPSED_C=ELAPSED_CS%%100"
 echo Done.
 echo Created files:
 echo - %INPUT%
 echo - %OUTPUT%
 echo - %RESULT%
+echo Start time: %START_TIME%
+echo End time  : %END_TIME%
+echo Elapsed   : %ELAPSED_H%h %ELAPSED_M%m %ELAPSED_S%s %ELAPSED_C%cs
 popd
 pause
