@@ -10,7 +10,7 @@ type Params struct {
 	L      int
 	J1     float64
 	J2     float64
-	K      float64 // четырёхспиновое взаимодействие (в CSV: колонка J3)
+	K      float64
 	Copies int
 	H      float64
 	T      float64
@@ -99,3 +99,4 @@ func ParseRecord(record []string, rowIndex int) (Params, bool, error) {
 		Save:   saveVal != 0,
 	}, false, nil
 }
+
