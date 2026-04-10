@@ -114,8 +114,6 @@ def main():
         if aStepsDefault + mStepsDefault == 0:
             print("Колличество шагов должно быть больше 0")
             continue
-        if not "param_name" in task:
-            print("Ключ param_name не найден")
         for p in tpl:
             plist = []
             fill_parameter_list(task[p], plist, errors)
