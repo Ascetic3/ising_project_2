@@ -10,7 +10,6 @@ type Params struct {
 	L      int
 	J1     float64
 	J2     float64
-	K      float64
 	Copies int
 	H      float64
 	T      float64
@@ -42,9 +41,9 @@ func ParseRecord(record []string, rowIndex int) (Params, bool, error) {
 	if err != nil {
 		return Params{}, false, fmt.Errorf("invalid J2 value %q: %w", record[2], err)
 	}
-	K, err := strconv.ParseFloat(record[3], 64)
+	_, err = strconv.ParseFloat(record[3], 64)
 	if err != nil {
-		return Params{}, false, fmt.Errorf("invalid J3/K value %q: %w", record[3], err)
+		return Params{}, false, fmt.Errorf("invalid J3 value %q: %w", record[3], err)
 	}
 	if _, err := strconv.ParseFloat(record[4], 64); err != nil {
 		return Params{}, false, fmt.Errorf("invalid J4 value %q: %w", record[4], err)
@@ -90,7 +89,6 @@ func ParseRecord(record []string, rowIndex int) (Params, bool, error) {
 		L:      L,
 		J1:     J1,
 		J2:     J2,
-		K:      K,
 		Copies: copies,
 		H:      h,
 		T:      T,
