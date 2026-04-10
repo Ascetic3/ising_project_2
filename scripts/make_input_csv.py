@@ -16,9 +16,9 @@ def multiply(a, b):
 def generate_input_csv(points:list, a_steps:int, m_steps:int, save:int):
     with open(_INPUT, "a") as output:
         for point in points:
-            for parameter in point:
-                output.write(f"{parameter};")
-            output.write(f"{a_steps};{m_steps};{save}\n")
+            complete_point = point
+            complete_point.extend([a_steps, m_steps, save])
+            output.write(";".join(map(str, complete_point))+"\n")
 
 def cartesian_product(params:list):
     points = []
@@ -40,8 +40,8 @@ def clear_input_csv():
     with open(_INPUT, "w") as f:
         pass
 
-def fill_parameter_list(p, parameterList, errorsList = []):
-    if isinstance(p, int) or isinstance(p, float):
+def fill_parameter_list(p, parameterList:list, errorsList = []):
+    if isinstance(p, (int, float)):
         parameterList.append(p)
         return
     if isinstance(p, list):
@@ -50,24 +50,14 @@ def fill_parameter_list(p, parameterList, errorsList = []):
         return
     if isinstance(p, dict):
         #проверки
-        if not "begin" in p:
-            errorsList.append("ошибка диапазона: отсутствует поле begin")
-            return
-        if not "step" in p:
-            errorsList.append("ошибка диапазона: отсутствует поле step")
-            return
-        if not "end" in p:
-            errorsList.append("ошибка диапазона: отсутствует поле end")
-            return
-        if not (isinstance(p["begin"], int) or isinstance(p["begin"], float)):
-            errorsList.append("ошибка диапазона: поле begin должно иметь численное значение")
-            return
-        if not (isinstance(p["end"], int) or isinstance(p["end"], float)):
-            errorsList.append("ошибка диапазона: поле end должно иметь численное значение")
-            return
-        if not (isinstance(p["step"], int) or isinstance(p["step"], float)):
-            errorsList.append("ошибка диапазона: поле step должно иметь численное значение")
-            return
+        for i in ["begin", "step", "end"]:
+            if not i in p:
+                errorsList.append(f"Ошибка диапазона: отсутствует поле {i}")
+                return
+            if not (isinstance(p[i], (int, float))):
+                errorsList.append(f"Ошибка диапазона: поле {i} должно иметь численное значение")
+                return
+            
         val = begin = p["begin"]
         end = p["end"]
         step = p["step"]
@@ -87,10 +77,6 @@ def fill_parameter_list(p, parameterList, errorsList = []):
 
 
 def main():
-    
-    clear_input_csv()
-    points = []
-    mStepsDefault, aStepsDefault = 0, 0
     try:
         file_name = sys.argv[1]
     except IndexError:
@@ -99,6 +85,11 @@ def main():
     except FileNotFoundError:
         print("Файл указан неверно")
         return
+        
+    clear_input_csv()
+
+    points = []
+    mStepsDefault, aStepsDefault = 0, 0
 
     with open(file_name) as json_file:
         jsn = json.load(json_file)
@@ -121,7 +112,10 @@ def main():
                 continue
             mStepsDefault = task["mSteps"]
         if aStepsDefault + mStepsDefault == 0:
+            print("Колличество шагов должно быть больше 0")
             continue
+        if not "param_name" in task:
+            print("Ключ param_name не найден")
         for p in tpl:
             plist = []
             fill_parameter_list(task[p], plist, errors)
@@ -131,7 +125,8 @@ def main():
                     break
             data.append(plist)
 
-            points = cartesian_product(data) 
+        points = cartesian_product(data) 
+
         if len(errors) == 0:
             generate_input_csv(points, aStepsDefault, mStepsDefault, save)
 
