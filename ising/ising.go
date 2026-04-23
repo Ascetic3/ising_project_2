@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math"
 	"math/rand"
+	"sync"
 )
 
 // type Params struct {
@@ -135,7 +136,7 @@ func calcParameters(lattice array2d, L int, J1, J2, J3, J4, J5, J6, h float64, e
 	}
 }
 
-func mcStep(lattice array2d, L int, J1, J2, J3, J4, J5, J6, h, T float64, x, y int) {
+func mcStep(rng *rand.Rand, lattice array2d, L int, J1, J2, J3, J4, J5, J6, h, T float64, x, y int) {
 	S0 := lattice[x][y]
 	S1 := -S0
 	Sr := lattice[pbc(x+1, L)][y]
@@ -161,17 +162,17 @@ func mcStep(lattice array2d, L int, J1, J2, J3, J4, J5, J6, h, T float64, x, y i
 		c.ul*float64(Sd4)
 
 	dE := 2 * float64(S0) * (pairSum + h)
-	if rand.Float64() < math.Exp(-dE/T) {
+	if rng.Float64() < math.Exp(-dE/T) {
 		lattice[x][y] = S1
 	}
 }
 
-func nextStep(lattice array2d, L int, J1, J2, J3, J4, J5, J6, h, T float64) {
+func nextStep(rng *rand.Rand, lattice array2d, L int, J1, J2, J3, J4, J5, J6, h, T float64) {
 	N := L * L
 	for i := 0; i < N; i++ {
-		x := rand.Intn(L)
-		y := rand.Intn(L)
-		mcStep(lattice, L, J1, J2, J3, J4, J5, J6, h, T, x, y)
+		x := rng.Intn(L)
+		y := rng.Intn(L)
+		mcStep(rng, lattice, L, J1, J2, J3, J4, J5, J6, h, T, x, y)
 	}
 }
 
@@ -238,30 +239,60 @@ func (s *Simulator) Run(J1, J2, J3, J4, J5, J6, h, T float64, aSteps, mSteps int
 	Afm := 0.0
 	Afm2 := 0.0
 
+	type copyResult struct {
+		E, E2, M, M2, Afm, Afm2 float64
+	}
+
+	const seedStep int64 = 1_000_003
+	baseSeed := int64(1)
+	weight := 1 / float64(mSteps*copies)
+
+	results := make([]copyResult, copies)
+	var wg sync.WaitGroup
+
 	for copyIdx := 0; copyIdx < copies; copyIdx++ {
-		lattice := s.lattices[copyIdx]
+		wg.Add(1)
+		go func(copyIdx int) {
+			defer wg.Done()
 
-		for sIdx := 0; sIdx < aSteps; sIdx++ {
-			nextStep(lattice, L, J1, J2, J3, J4, J5, J6, h, T)
-		}
+			rng := rand.New(rand.NewSource(baseSeed + int64(copyIdx)*seedStep))
+			lattice := s.lattices[copyIdx]
+			local := copyResult{}
 
-		// Измерения.
-		for sIdx := 0; sIdx < mSteps; sIdx++ {
-			nextStep(lattice, L, J1, J2, J3, J4, J5, J6, h, T)
+			for sIdx := 0; sIdx < aSteps; sIdx++ {
+				nextStep(rng, lattice, L, J1, J2, J3, J4, J5, J6, h, T)
+			}
 
-			energy := 0.0
-			moment := 0.0
-			afm := 0.0
-			calcParameters(lattice, L, J1, J2, J3, J4, J5, J6, h, &energy, &moment, &afm)
+			for sIdx := 0; sIdx < mSteps; sIdx++ {
+				nextStep(rng, lattice, L, J1, J2, J3, J4, J5, J6, h, T)
 
-			E += energy / float64(mSteps) / float64(copies)
-			E2 += energy * energy / float64(mSteps) / float64(copies)
-			M += math.Abs(moment) / float64(mSteps) / float64(copies)
-			M2 += moment * moment / float64(mSteps) / float64(copies)
+				energy := 0.0
+				moment := 0.0
+				afm := 0.0
+				calcParameters(lattice, L, J1, J2, J3, J4, J5, J6, h, &energy, &moment, &afm)
 
-			Afm += math.Abs(afm) / float64(mSteps) / float64(copies)
-			Afm2 += afm * afm / float64(mSteps) / float64(copies)
-		}
+				local.E += energy * weight
+				local.E2 += energy * energy * weight
+				local.M += math.Abs(moment) * weight
+				local.M2 += moment * moment * weight
+
+				local.Afm += math.Abs(afm) * weight
+				local.Afm2 += afm * afm * weight
+			}
+
+			results[copyIdx] = local
+		}(copyIdx)
+	}
+
+	wg.Wait()
+
+	for _, result := range results {
+		E += result.E
+		E2 += result.E2
+		M += result.M
+		M2 += result.M2
+		Afm += result.Afm
+		Afm2 += result.Afm2
 	}
 	fmt.Printf("L=%d: J=[%.3f %.3f %.3f %.3f %.3f %.3f], h=%.3f: E=%.3f, M=%.3f, Afm=%.3f \n",
 		L, J1, J2, J3, J4, J5, J6, h, E, M, Afm)
@@ -276,4 +307,3 @@ func (s *Simulator) Run(J1, J2, J3, J4, J5, J6, h, T float64, aSteps, mSteps int
 		Afm2: Afm2,
 	}, nil
 }
-
