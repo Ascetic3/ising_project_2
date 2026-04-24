@@ -5,6 +5,7 @@ import (
 	"math"
 	"math/rand"
 	"sync"
+	"time"
 )
 
 // type Params struct {
@@ -244,7 +245,7 @@ func (s *Simulator) Run(J1, J2, J3, J4, J5, J6, h, T float64, aSteps, mSteps int
 	}
 
 	const seedStep int64 = 1_000_003
-	baseSeed := int64(1)
+	baseSeed := time.Now().UnixNano()
 	weight := 1 / float64(mSteps*copies)
 
 	results := make([]copyResult, copies)
