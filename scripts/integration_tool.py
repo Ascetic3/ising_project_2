@@ -24,7 +24,6 @@ def make_plot(x, y):
     print(len(x), len(y))
     x_points = np.array(x)
     y_points = np.array(y)
-    print(y_points)
     plt.plot(x_points, y_points, label="Энтропия", linewidth=1)
     plt.title("Энтропия")
     plt.xlabel("T")
@@ -47,7 +46,6 @@ def main():
         return
     var1 = var1[::-1]
     var2 = var2[::-1]
-    print(var1[0])
     y = integration(var1, var2)
     make_plot(var1, y)
 
