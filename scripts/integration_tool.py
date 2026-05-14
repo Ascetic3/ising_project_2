@@ -10,7 +10,7 @@ def read_file(file_name:str):
         for line in f:
             point = line.rstrip().split(";")
             var1.append(float(point[0]))
-            var2.append(float(point[3]))
+            var2.append(float(point[4]))
     return var1, var2
 
 
