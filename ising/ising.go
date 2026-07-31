@@ -137,32 +137,43 @@ func calcParameters(lattice array2d, L int, J1, J2, J3, J4, J5, J6, h float64, e
 	}
 }
 
+func localDeltaEForFlip(lattice array2d, L int, J1, J2, J3, J4, J5, J6, h float64, x, y int) float64 {
+	S := lattice[x][y]
+	sum := h
+
+	// Terms written by calcParameters from the flipped site.
+	c := couplingsForSite(siteClass(x, y), J1, J2, J3, J4, J5, J6)
+	sum += c.right * float64(lattice[pbc(x+1, L)][y])
+	sum += c.down * float64(lattice[x][pbc(y+1, L)])
+	sum += c.dr * float64(lattice[pbc(x+1, L)][pbc(y+1, L)])
+	sum += c.dl * float64(lattice[pbc(x-1, L)][pbc(y+1, L)])
+
+	// Terms written by neighboring sites whose destination is the flipped site.
+	leftX := pbc(x-1, L)
+	leftCouplings := couplingsForSite(siteClass(leftX, y), J1, J2, J3, J4, J5, J6)
+	sum += leftCouplings.right * float64(lattice[leftX][y])
+
+	upY := pbc(y-1, L)
+	upCouplings := couplingsForSite(siteClass(x, upY), J1, J2, J3, J4, J5, J6)
+	sum += upCouplings.down * float64(lattice[x][upY])
+
+	upLeftX := pbc(x-1, L)
+	upLeftY := pbc(y-1, L)
+	upLeftCouplings := couplingsForSite(siteClass(upLeftX, upLeftY), J1, J2, J3, J4, J5, J6)
+	sum += upLeftCouplings.dr * float64(lattice[upLeftX][upLeftY])
+
+	upRightX := pbc(x+1, L)
+	upRightY := pbc(y-1, L)
+	upRightCouplings := couplingsForSite(siteClass(upRightX, upRightY), J1, J2, J3, J4, J5, J6)
+	sum += upRightCouplings.dl * float64(lattice[upRightX][upRightY])
+
+	return 2 * float64(S) * sum
+}
+
 func mcStep(rng *rand.Rand, lattice array2d, L int, J1, J2, J3, J4, J5, J6, h, T float64, x, y int) {
 	S0 := lattice[x][y]
 	S1 := -S0
-	Sr := lattice[pbc(x+1, L)][y]
-	Sb := lattice[x][pbc(y+1, L)]
-	Sl := lattice[pbc(x-1, L)][y]
-	St := lattice[x][pbc(y-1, L)]
-	Sd1 := lattice[pbc(x+1, L)][pbc(y+1, L)]
-	Sd2 := lattice[pbc(x-1, L)][pbc(y+1, L)]
-	Sd3 := lattice[pbc(x+1, L)][pbc(y-1, L)]
-	Sd4 := lattice[pbc(x-1, L)][pbc(y-1, L)]
-
-	// Класс узла определяет, какие направленные J использовать для восьми ближайших соседей.
-	c := couplingsForSite(siteClass(x, y), J1, J2, J3, J4, J5, J6)
-
-	// pairSum — сумма по 8 направлениям (все спины-соседи помножены на соответствующие коэффициенты).
-	pairSum := c.up*float64(St) +
-		c.right*float64(Sr) +
-		c.down*float64(Sb) +
-		c.left*float64(Sl) +
-		c.dl*float64(Sd2) +
-		c.dr*float64(Sd1) +
-		c.ur*float64(Sd3) +
-		c.ul*float64(Sd4)
-
-	dE := 2 * float64(S0) * (pairSum + h)
+	dE := localDeltaEForFlip(lattice, L, J1, J2, J3, J4, J5, J6, h, x, y)
 	if rng.Float64() < math.Exp(-dE/T) {
 		lattice[x][y] = S1
 	}
