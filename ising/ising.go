@@ -194,6 +194,18 @@ type Simulator struct {
 	lattices []array2d
 }
 
+// LatticeSnapshot returns a deep copy of one copy's current lattice.
+func (s *Simulator) LatticeSnapshot(copyIdx int) ([][]int, error) {
+	if copyIdx < 0 || copyIdx >= len(s.lattices) {
+		return nil, fmt.Errorf("copy index %d out of range", copyIdx)
+	}
+	snapshot := make([][]int, len(s.lattices[copyIdx]))
+	for x := range s.lattices[copyIdx] {
+		snapshot[x] = append([]int(nil), s.lattices[copyIdx][x]...)
+	}
+	return snapshot, nil
+}
+
 func NewSimulator(L, copies int) (*Simulator, error) {
 	if L <= 0 {
 		return nil, fmt.Errorf("L must be > 0")
