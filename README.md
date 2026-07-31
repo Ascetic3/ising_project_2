@@ -125,3 +125,38 @@ py scripts/graph_tool.py data/output/result.csv
 ```
 py -m pip install matplotlib numpy
 ```
+
+---
+
+## Reproducible demo
+
+Requirements: Windows 10/11 and Go 1.22 or newer. Python packages are not
+required for this demo.
+
+Run this command from the repository root:
+
+```bat
+tools\run_demo.bat
+```
+
+The calculation normally finishes in a few seconds. Every run creates a new
+timestamped directory under `demo-output/` and never overwrites an earlier
+run. The directory contains:
+
+- `input.csv` - an exact copy of the demo input;
+- `output.csv` - raw Metropolis observables;
+- `result.csv` - observables normalized for plotting or inspection;
+- `diagnostics.csv` - point numbers, temperatures, and derived point seeds;
+- `run_metadata.json` - the seed, model parameters, CLI arguments, Go version,
+  and run time;
+- `images/lattice_*.png` - red/blue snapshots of the spin lattice.
+
+`tools\run_demo.bat` uses the fixed seed `20260731`. Reusing the same input and
+seed reproduces the physical CSV and PNG files exactly; each independent copy
+still receives its own deterministic random-number stream.
+
+This small configuration demonstrates the qualitative change from a more
+ordered lattice to a less ordered lattice. It is not a precision estimate of a
+critical temperature or a replacement for a converged scientific simulation.
+The public demo currently covers only the standard Metropolis calculation, not
+parallel tempering.
