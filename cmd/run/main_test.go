@@ -159,7 +159,7 @@ func TestGeneratedCSVSchema(t *testing.T) {
 
 func TestRunMetadataSanitizesExternalAbsolutePaths(t *testing.T) {
 	root := t.TempDir()
-	privateDir := filepath.Join(root, "private-user-Alice", "local-worktree")
+	privateDir := filepath.Join(root, "metadata-absolute-temp-do-not-leak", "private-user-Alice", "local-worktree")
 	if err := os.MkdirAll(privateDir, 0o755); err != nil {
 		t.Fatalf("create private test directory: %v", err)
 	}
@@ -194,7 +194,7 @@ func TestRunMetadataSanitizesExternalAbsolutePaths(t *testing.T) {
 		}
 	}
 	metadataText := string(content)
-	for _, privateValue := range []string{root, filepath.Base(root), "private-user-Alice", "local-worktree"} {
+	for _, privateValue := range []string{"metadata-absolute-temp-do-not-leak", "private-user-Alice", "local-worktree"} {
 		if strings.Contains(metadataText, privateValue) {
 			t.Fatalf("metadata contains private path component %q", privateValue)
 		}
@@ -203,11 +203,15 @@ func TestRunMetadataSanitizesExternalAbsolutePaths(t *testing.T) {
 
 func TestRunMetadataPreservesSafeRelativePaths(t *testing.T) {
 	root := t.TempDir()
+	workingDir := filepath.Join(root, "metadata-relative-temp-do-not-leak")
+	if err := os.MkdirAll(workingDir, 0o755); err != nil {
+		t.Fatalf("create temporary working directory: %v", err)
+	}
 	originalWorkingDir, err := os.Getwd()
 	if err != nil {
 		t.Fatalf("get working directory: %v", err)
 	}
-	if err := os.Chdir(root); err != nil {
+	if err := os.Chdir(workingDir); err != nil {
 		t.Fatalf("change to temporary working directory: %v", err)
 	}
 	t.Cleanup(func() {
@@ -239,8 +243,8 @@ func TestRunMetadataPreservesSafeRelativePaths(t *testing.T) {
 	if metadata.CLI.OutputDir != "demo-output/relative-run" {
 		t.Fatalf("relative output directory = %q, want demo-output/relative-run", metadata.CLI.OutputDir)
 	}
-	if strings.Contains(string(content), root) || strings.Contains(string(content), filepath.Base(root)) {
-		t.Fatalf("metadata contains temporary working directory %q", root)
+	if strings.Contains(string(content), "metadata-relative-temp-do-not-leak") {
+		t.Fatalf("metadata contains temporary working directory marker %q", "metadata-relative-temp-do-not-leak")
 	}
 }
 
