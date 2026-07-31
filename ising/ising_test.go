@@ -3,6 +3,7 @@ package ising
 import (
 	"math"
 	"math/rand"
+	"reflect"
 	"testing"
 )
 
@@ -194,4 +195,63 @@ func TestLocalDeltaEConsistencyManualStates(t *testing.T) {
 		})
 	}
 	t.Logf("delta E manual states=%d max_abs_diff=%.17g", len(tests), maxDiff)
+}
+
+func TestDeriveCopySeedIsDeterministicAndDistinct(t *testing.T) {
+	const baseSeed int64 = 20260731
+	seen := make(map[int64]bool)
+	for copyIdx := 0; copyIdx < 16; copyIdx++ {
+		first := deriveCopySeed(baseSeed, copyIdx)
+		second := deriveCopySeed(baseSeed, copyIdx)
+		if first != second {
+			t.Fatalf("copy %d seed is not deterministic: %d != %d", copyIdx, first, second)
+		}
+		if seen[first] {
+			t.Fatalf("copy %d reused derived seed %d", copyIdx, first)
+		}
+		seen[first] = true
+	}
+}
+
+func TestRunWithSeedIsReproducible(t *testing.T) {
+	const (
+		L      = 8
+		copies = 3
+		seed   = int64(20260731)
+	)
+
+	first, err := NewSimulator(L, copies)
+	if err != nil {
+		t.Fatalf("create first simulator: %v", err)
+	}
+	second, err := NewSimulator(L, copies)
+	if err != nil {
+		t.Fatalf("create second simulator: %v", err)
+	}
+
+	firstResult, err := first.RunWithSeed(0.71, -1.13, 1.37, -0.89, 0.53, -1.61, 0.27, 1.4, 20, 30, seed)
+	if err != nil {
+		t.Fatalf("first seeded run: %v", err)
+	}
+	secondResult, err := second.RunWithSeed(0.71, -1.13, 1.37, -0.89, 0.53, -1.61, 0.27, 1.4, 20, 30, seed)
+	if err != nil {
+		t.Fatalf("second seeded run: %v", err)
+	}
+	if firstResult != secondResult {
+		t.Fatalf("same seed produced different observables:\nfirst:  %+v\nsecond: %+v", firstResult, secondResult)
+	}
+
+	for copyIdx := 0; copyIdx < copies; copyIdx++ {
+		firstSnapshot, err := first.LatticeSnapshot(copyIdx)
+		if err != nil {
+			t.Fatalf("first snapshot for copy %d: %v", copyIdx, err)
+		}
+		secondSnapshot, err := second.LatticeSnapshot(copyIdx)
+		if err != nil {
+			t.Fatalf("second snapshot for copy %d: %v", copyIdx, err)
+		}
+		if !reflect.DeepEqual(firstSnapshot, secondSnapshot) {
+			t.Fatalf("same seed produced different lattice for copy %d", copyIdx)
+		}
+	}
 }

@@ -1,3 +1,11 @@
+*.exe
+*.test
+.gocache/
+**/__pycache__/
+.pytest_cache/
+/build/
+/tmp/
+/demo-output/
+
 data/input/input.csv
-data/output/*.csv
-data/output/plots/*.png
+data/output/
