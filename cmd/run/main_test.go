@@ -3,6 +3,7 @@ package main
 import (
 	"crypto/sha256"
 	"encoding/csv"
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -153,6 +154,93 @@ func TestGeneratedCSVSchema(t *testing.T) {
 	}
 	if !reflect.DeepEqual(diagnosticsRecords[0], wantDiagnosticsHeader) {
 		t.Fatalf("diagnostics header = %v, want %v", diagnosticsRecords[0], wantDiagnosticsHeader)
+	}
+}
+
+func TestRunMetadataSanitizesExternalAbsolutePaths(t *testing.T) {
+	root := t.TempDir()
+	privateDir := filepath.Join(root, "private-user-Alice", "local-worktree")
+	if err := os.MkdirAll(privateDir, 0o755); err != nil {
+		t.Fatalf("create private test directory: %v", err)
+	}
+	inputPath := writeTestInput(t, privateDir, testInput)
+	outputDir := filepath.Join(privateDir, "public-result")
+
+	if err := run(runOptions{inputPath: inputPath, outputDir: outputDir, seed: 20260731}); err != nil {
+		t.Fatalf("run with absolute paths: %v", err)
+	}
+	content, err := os.ReadFile(filepath.Join(outputDir, "run_metadata.json"))
+	if err != nil {
+		t.Fatalf("read metadata: %v", err)
+	}
+	var metadata runMetadata
+	if err := json.Unmarshal(content, &metadata); err != nil {
+		t.Fatalf("decode metadata: %v", err)
+	}
+
+	if metadata.InputFile != "input.csv" || metadata.CLI.InputPath != "input.csv" {
+		t.Fatalf("sanitized input paths = %q and %q, want input.csv", metadata.InputFile, metadata.CLI.InputPath)
+	}
+	if metadata.CLI.OutputDir != "public-result" {
+		t.Fatalf("sanitized output directory = %q, want public-result", metadata.CLI.OutputDir)
+	}
+	for name, value := range map[string]string{
+		"input_file": metadata.InputFile,
+		"cli.input":  metadata.CLI.InputPath,
+		"cli.output": metadata.CLI.OutputDir,
+	} {
+		if filepath.IsAbs(value) || filepath.VolumeName(value) != "" {
+			t.Fatalf("%s contains absolute path %q", name, value)
+		}
+	}
+	metadataText := string(content)
+	for _, privateValue := range []string{root, filepath.Base(root), "private-user-Alice", "local-worktree"} {
+		if strings.Contains(metadataText, privateValue) {
+			t.Fatalf("metadata contains private path component %q", privateValue)
+		}
+	}
+}
+
+func TestRunMetadataPreservesSafeRelativePaths(t *testing.T) {
+	root := t.TempDir()
+	originalWorkingDir, err := os.Getwd()
+	if err != nil {
+		t.Fatalf("get working directory: %v", err)
+	}
+	if err := os.Chdir(root); err != nil {
+		t.Fatalf("change to temporary working directory: %v", err)
+	}
+	t.Cleanup(func() {
+		if err := os.Chdir(originalWorkingDir); err != nil {
+			t.Errorf("restore working directory: %v", err)
+		}
+	})
+
+	if err := os.MkdirAll("configs", 0o755); err != nil {
+		t.Fatalf("create configs directory: %v", err)
+	}
+	inputPath := writeTestInput(t, "configs", testInput)
+	outputDir := filepath.Join("demo-output", "relative-run")
+	if err := run(runOptions{inputPath: inputPath, outputDir: outputDir, seed: 20260731}); err != nil {
+		t.Fatalf("run with relative paths: %v", err)
+	}
+
+	content, err := os.ReadFile(filepath.Join(outputDir, "run_metadata.json"))
+	if err != nil {
+		t.Fatalf("read metadata: %v", err)
+	}
+	var metadata runMetadata
+	if err := json.Unmarshal(content, &metadata); err != nil {
+		t.Fatalf("decode metadata: %v", err)
+	}
+	if metadata.InputFile != "configs/input.csv" || metadata.CLI.InputPath != "configs/input.csv" {
+		t.Fatalf("relative input paths = %q and %q, want configs/input.csv", metadata.InputFile, metadata.CLI.InputPath)
+	}
+	if metadata.CLI.OutputDir != "demo-output/relative-run" {
+		t.Fatalf("relative output directory = %q, want demo-output/relative-run", metadata.CLI.OutputDir)
+	}
+	if strings.Contains(string(content), root) || strings.Contains(string(content), filepath.Base(root)) {
+		t.Fatalf("metadata contains temporary working directory %q", root)
 	}
 }
 

@@ -272,6 +272,29 @@ func saveLatticePNG(spins [][]int, filename string) error {
 }
 
 func buildMetadata(options runOptions, inputPath, outputDir string, rows []inputRow, startedAt time.Time) runMetadata {
+	safeRelative := func(path string) (string, bool) {
+		cleaned := filepath.Clean(path)
+		parentPrefix := ".." + string(os.PathSeparator)
+		if cleaned == "." || cleaned == ".." || filepath.IsAbs(cleaned) ||
+			filepath.VolumeName(cleaned) != "" || strings.HasPrefix(cleaned, parentPrefix) {
+			return "", false
+		}
+		return filepath.ToSlash(cleaned), true
+	}
+
+	safeInputPath := filepath.Base(inputPath)
+	if workingDir, err := os.Getwd(); err == nil {
+		if relativeInput, err := filepath.Rel(workingDir, inputPath); err == nil {
+			if relativeInput, ok := safeRelative(relativeInput); ok {
+				safeInputPath = relativeInput
+			}
+		}
+	}
+	safeOutputDir := filepath.Base(outputDir)
+	if relativeOutput, ok := safeRelative(options.outputDir); ok {
+		safeOutputDir = relativeOutput
+	}
+
 	points := make([]metadataPoint, len(rows))
 	temperatures := make([]float64, len(rows))
 	for index, row := range rows {
@@ -289,11 +312,11 @@ func buildMetadata(options runOptions, inputPath, outputDir string, rows []input
 	return runMetadata{
 		Seed:         options.seed,
 		Temperatures: temperatures,
-		InputFile:    inputPath,
+		InputFile:    safeInputPath,
 		GoVersion:    runtime.Version(),
 		StartedAt:    startedAt.Format(time.RFC3339Nano),
 		CLI: metadataCLI{
-			InputPath: options.inputPath, OutputDir: outputDir,
+			InputPath: safeInputPath, OutputDir: safeOutputDir,
 			Seed: options.seed, SaveImages: options.saveImages,
 		},
 		Points: points,
