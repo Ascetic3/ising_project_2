@@ -101,30 +101,19 @@ T;E;M;afm;C;X;Xafm
 
 ## ▶️ Запуск
 
-Дважды кликнуть:
+Основной рекомендуемый запуск версии v0.1:
 
-```
-tools/run_simulation.bat
-```
-
-Или вручную:
-
-```
-py scripts/make_input_csv.py configs/params-sample2d.json
-go run ./cmd/run/main.go
-py scripts/make_result_csv.py data/output/output.csv data/output/result.csv
-py scripts/graph_tool.py data/output/result.csv
+```bat
+tools\run_demo.bat
 ```
 
-`tools/run_simulation.bat` автоматически проверяет наличие `numpy` и `matplotlib` перед шагом графиков.
-Если библиотек нет, bat-файл пытается установить их автоматически.
-Если установка не удалась, пайплайн завершается без графиков (с предупреждением).
+Он создаёт новую изолированную директорию внутри `demo-output/` и не
+перезаписывает предыдущие результаты. Python для демонстрационного запуска не
+требуется.
 
-При необходимости можно установить вручную:
-
-```
-py -m pip install matplotlib numpy
-```
+`tools\run_simulation.bat` оставлен только как безопасная legacy-заглушка. Он
+не запускает расчёт и не изменяет файлы; при вызове выводит ссылку на
+`tools\run_demo.bat`.
 
 ---
 
