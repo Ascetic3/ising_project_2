@@ -9,77 +9,71 @@
 
 ---
 
-## 📁 Структура проекта
+## 📁 Структура демонстрационного запуска
 
-```
-.
-├── cmd/
-│   └── run/
-│       └── main.go         # Точка входа: чтение input.csv и запись output.csv
-├── ising/
-│   └── ising.go            # Реализация модели Изинга
-├── internal/
-│   └── csvio/
-│       └── input.go        # Парсинг и валидация строк input.csv
-├── scripts/
-│   ├── make_input_csv.py   # Генерация input.csv из JSON
-│   ├── make_result_csv.py  # Постобработка (C, X, Xafm)
-│   └── graph_tool.py       # Внешний скрипт построения графиков (без изменений)
-├── configs/
-│   └── params-sample2d.json # Пример входных параметров
-├── data/
-│   ├── input/
-│   │   └── input.csv       # Генерируется скриптом
-│   └── output/
-│       ├── output.csv      # Генерируется Go-симуляцией
-│       ├── result.csv      # Генерируется постобработкой
-│       └── plots/          # PNG-графики (run_simulation.bat делает cd сюда перед graph_tool)
-├── tools/
-│   └── run_simulation.bat  # Автоматический запуск всего пайплайна
-├── go.mod
-└── README.md
+```text
+configs/demo-input.csv       # Проверенный небольшой входной CSV
+cmd/run/main.go              # CLI и запись изолированных результатов
+internal/csvio/input.go      # Parser входного CSV
+ising/ising.go               # Модель и алгоритм Metropolis
+tools/run_demo.bat           # Основной безопасный запуск v0.1
+tools/run_simulation.bat     # Устаревшая безопасная заглушка
+demo-output/                 # Игнорируемые Git результаты отдельных запусков
 ```
 
----
+Пайплайн v0.1 не требует Python:
 
-## ⚙️ Полный пайплайн
-
-```
-JSON → scripts/make_input_csv.py → data/input/input.csv → Go (Union Jack Ising) → data/output/output.csv → scripts/make_result_csv.py → data/output/result.csv
+```text
+configs/demo-input.csv → Go CLI → demo-output/<new-run>/
 ```
 
 ---
 
 ## 📥 Формат входного файла `input.csv`
 
-Разделитель — `;`
+Разделитель — `;`. Вход содержит ровно 13 полей в следующем порядке:
 
-```
-L;J1;J2;J3;J4;J5;J6;K;copies;h;T;aSteps;mSteps;save
+```text
+L;J1;J2;J3;J4;J5;J6;copies;h;T;aSteps;mSteps;save
 ```
 
----
+Пример корректной строки:
+
+```text
+12;1;1;1;1;1;1;2;0;0.5;100;200;1
+```
+
+`save=1` продолжает эволюцию текущей решётки, а `save=0` сначала
+восстанавливает ферромагнитную конфигурацию.
 
 ## 📤 Формат выходного файла `output.csv`
 
-```
-L;J1;J2;J3;J4;J5;J6;K;copies;h;T;aSteps;mSteps;save;E;E2;Mtot;M2;Afm;Afm2
-```
+`output.csv` намеренно не содержит header для совместимости с существующей
+постобработкой. Каждая строка содержит 13 входных полей и 6 измеренных величин:
 
----
-
-## 📊 Постобработка
-
-Файл result.csv содержит:
-
-```
-T;E;M;afm;C;X;Xafm
+```text
+L;J1;J2;J3;J4;J5;J6;copies;h;T;aSteps;mSteps;save;E;E2;Mtot;M2;Afm;Afm2
 ```
 
-Скрипт `graph_tool.py` сохраняет PNG в `./graphs` относительно текущей рабочей папки.
+`E`, `E2`, `Mtot`, `M2`, `Afm`, `Afm2` являются усреднёнными величинами,
+возвращаемыми симулятором.
 
-- При запуске через `tools/run_simulation.bat` (там выполняется `cd data/output/plots`) графики будут в `data/output/plots/graphs/`.
-- При ручном запуске из корня репозитория графики будут в `./graphs` в корне проекта.
+## 📊 `result.csv` и `diagnostics.csv`
+
+В демонстрационном CLI `result.csv` создаётся непосредственно Go-программой и
+не содержит header. Порядок колонок:
+
+```text
+T;E_per_spin;M_per_spin;AFM_per_spin;C;kappa;af_kappa
+```
+
+`diagnostics.csv` содержит header и одну строку на расчётную точку:
+
+```text
+point;T;point_seed
+```
+
+Python-скрипты в `scripts/` не участвуют в воспроизводимом demo v0.1.
 
 ---
 

@@ -2,6 +2,7 @@ package main
 
 import (
 	"crypto/sha256"
+	"encoding/csv"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -101,6 +102,58 @@ func TestRunDifferentSeedChangesPhysicalResult(t *testing.T) {
 		}
 	}
 	t.Fatal("different seeds produced identical physical CSV and PNG artifacts")
+}
+
+func TestGeneratedCSVSchema(t *testing.T) {
+	root := t.TempDir()
+	inputPath := writeTestInput(t, root, testInput)
+	outputDir := filepath.Join(root, "output")
+	runTestSimulation(t, inputPath, outputDir, 20260731)
+
+	readCSV := func(name string) [][]string {
+		t.Helper()
+		file, err := os.Open(filepath.Join(outputDir, name))
+		if err != nil {
+			t.Fatalf("open %s: %v", name, err)
+		}
+		defer file.Close()
+		reader := csv.NewReader(file)
+		reader.Comma = ';'
+		records, err := reader.ReadAll()
+		if err != nil {
+			t.Fatalf("read %s: %v", name, err)
+		}
+		return records
+	}
+
+	outputRecords := readCSV("output.csv")
+	if len(outputRecords) != 2 {
+		t.Fatalf("output.csv rows = %d, want 2 data rows without header", len(outputRecords))
+	}
+	for rowIndex, record := range outputRecords {
+		if len(record) != 19 {
+			t.Fatalf("output.csv row %d fields = %d, want 19", rowIndex+1, len(record))
+		}
+	}
+
+	resultRecords := readCSV("result.csv")
+	if len(resultRecords) != 2 {
+		t.Fatalf("result.csv rows = %d, want 2 data rows without header", len(resultRecords))
+	}
+	for rowIndex, record := range resultRecords {
+		if len(record) != 7 {
+			t.Fatalf("result.csv row %d fields = %d, want 7", rowIndex+1, len(record))
+		}
+	}
+
+	diagnosticsRecords := readCSV("diagnostics.csv")
+	wantDiagnosticsHeader := []string{"point", "T", "point_seed"}
+	if len(diagnosticsRecords) != 3 {
+		t.Fatalf("diagnostics.csv rows = %d, want header and 2 data rows", len(diagnosticsRecords))
+	}
+	if !reflect.DeepEqual(diagnosticsRecords[0], wantDiagnosticsHeader) {
+		t.Fatalf("diagnostics header = %v, want %v", diagnosticsRecords[0], wantDiagnosticsHeader)
+	}
 }
 
 func TestRunRejectsMissingInputBeforeCreatingOutput(t *testing.T) {
