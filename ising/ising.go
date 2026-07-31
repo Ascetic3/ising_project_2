@@ -232,6 +232,18 @@ func (s *Simulator) ResetFerromagnetic() {
 }
 
 func (s *Simulator) Run(J1, J2, J3, J4, J5, J6, h, T float64, aSteps, mSteps int) (ResultRow, error) {
+	return s.RunWithSeed(J1, J2, J3, J4, J5, J6, h, T, aSteps, mSteps, time.Now().UnixNano())
+}
+
+const copySeedStep int64 = 1_000_003
+
+func deriveCopySeed(baseSeed int64, copyIdx int) int64 {
+	// A fixed large odd stride gives each copy a distinct deterministic stream.
+	return baseSeed + int64(copyIdx)*copySeedStep
+}
+
+// RunWithSeed performs the same Metropolis calculation as Run with reproducible RNG streams.
+func (s *Simulator) RunWithSeed(J1, J2, J3, J4, J5, J6, h, T float64, aSteps, mSteps int, seed int64) (ResultRow, error) {
 	if aSteps <= 0 {
 		return ResultRow{}, fmt.Errorf("ASteps must be > 0")
 	}
@@ -255,8 +267,6 @@ func (s *Simulator) Run(J1, J2, J3, J4, J5, J6, h, T float64, aSteps, mSteps int
 		E, E2, M, M2, Afm, Afm2 float64
 	}
 
-	const seedStep int64 = 1_000_003
-	baseSeed := time.Now().UnixNano()
 	weight := 1 / float64(mSteps*copies)
 
 	results := make([]copyResult, copies)
@@ -267,7 +277,7 @@ func (s *Simulator) Run(J1, J2, J3, J4, J5, J6, h, T float64, aSteps, mSteps int
 		go func(copyIdx int) {
 			defer wg.Done()
 
-			rng := rand.New(rand.NewSource(baseSeed + int64(copyIdx)*seedStep))
+			rng := rand.New(rand.NewSource(deriveCopySeed(seed, copyIdx)))
 			lattice := s.lattices[copyIdx]
 			local := copyResult{}
 
